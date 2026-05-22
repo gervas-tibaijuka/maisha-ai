@@ -171,3 +171,78 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+# Ongeza mwishoni mwa models zako (User)
+class UserSettings(db.Model):
+    __tablename__ = 'user_settings'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False)
+    language = db.Column(db.String(10), default='sw')   # 'sw' au 'en'
+    theme = db.Column(db.String(10), default='dark')    # 'dark' au 'light'
+
+# Endpoint mpya: account settings
+@app.route('/account', methods=['GET', 'POST'])
+@login_required
+def account():
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        if new_password:
+            current_user.password_hash = generate_password_hash(new_password, method='scrypt')
+            db.session.commit()
+            return jsonify({"status": "ok", "message": "Password imebadilishwa!"})
+    return render_template('account.html', user=current_user)
+
+# Endpoint: get user settings
+@app.route('/api/settings', methods=['GET'])
+@login_required
+def get_settings():
+    settings = UserSettings.query.filter_by(user_id=current_user.id).first()
+    if not settings:
+        settings = UserSettings(user_id=current_user.id, language='sw', theme='dark')
+        db.session.add(settings)
+        db.session.commit()
+    return jsonify({"language": settings.language, "theme": settings.theme})
+
+# Endpoint: update settings
+@app.route('/api/settings', methods=['POST'])
+@login_required
+def update_settings():
+    data = request.json
+    settings = UserSettings.query.filter_by(user_id=current_user.id).first()
+    if not settings:
+        settings = UserSettings(user_id=current_user.id)
+        db.session.add(settings)
+    if 'language' in data:
+        settings.language = data['language']
+    if 'theme' in data:
+        settings.theme = data['theme']
+    db.session.commit()
+    return jsonify({"status": "ok"})
+
+# Endpoint: share chat
+@app.route('/api/share_chat', methods=['POST'])
+@login_required
+def share_chat():
+    messages = ChatHistory.query.filter_by(user_id=current_user.id).order_by(ChatHistory.timestamp.asc()).all()
+    chat_text = "\n".join([f"{'🧑‍💻 Wewe' if m.sender=='user' else '🤖 Maisha AI'}: {m.message}" for m in messages])
+    return jsonify({"chat": chat_text})
+
+# Endpoint mpya kwenye Flask app
+@app.route('/api/get_history')
+@login_required
+def get_history():
+    msgs = ChatHistory.query.filter_by(user_id=current_user.id).order_by(ChatHistory.timestamp.asc()).all()
+    return jsonify({"history": [{"message": m.message, "sender": m.sender} for m in msgs]})
+
+@app.route('/api/share_chat', methods=['POST'])
+@login_required
+def share_chat():
+    msgs = ChatHistory.query.filter_by(user_id=current_user.id).order_by(ChatHistory.timestamp.asc()).all()
+    chat_text = "\n".join([f"{'Wewe' if m.sender=='user' else 'Maisha AI'}: {m.message}" for m in msgs])
+    return jsonify({"chat": chat_text})
+
+@app.route('/new_chat', methods=['POST'])
+@login_required
+def new_chat_post():
+    ChatHistory.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
+    return jsonify({"status": "ok"})
