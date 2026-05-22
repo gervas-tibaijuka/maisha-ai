@@ -488,7 +488,7 @@
             <button class="icon-btn" title="Gawana" onclick="shareChat()">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             </button>
-            <button class="icon-btn" title="Akaunti" onclick="window.location.href='/account'">
+           <button class="icon-btn" title="Logout" onclick="window.location.href='/logout'">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
             </button>
         </div>
@@ -496,6 +496,34 @@
 
     <!-- Chat area -->
     <div class="chat-area" id="chatArea">
+
+{% for msg in past_messages %}
+<div class="message-group {% if msg.sender == 'user' %}user{% endif %}">
+
+    <div class="msg-avatar {% if msg.sender == 'user' %}user{% else %}ai{% endif %}">
+        {% if msg.sender == 'user' %}
+            U
+        {% else %}
+            🧠
+        {% endif %}
+    </div>
+
+    <div class="msg-content">
+        <div class="msg-sender">
+            {% if msg.sender == 'user' %}
+                Wewe
+            {% else %}
+                Maisha AI
+            {% endif %}
+        </div>
+
+        <div class="msg-bubble">
+            {{ msg.message }}
+        </div>
+    </div>
+
+</div>
+{% endfor %}
         <!-- Welcome screen -->
         <div class="welcome-screen" id="welcomeScreen">
             <div class="welcome-icon">🧠</div>
@@ -557,7 +585,20 @@
     const chatArea = document.getElementById('chatArea');
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
-    const welcomeScreen = document.getElementById('welcomeScreen');
+   window.addEventListener(
+'DOMContentLoaded',
+() => {
+
+    const messages =
+    document.querySelectorAll(
+        '.message-group'
+    );
+
+    if(messages.length > 0){
+        welcomeScreen.style.display =
+        'none';
+    }
+});
 
     userInput.addEventListener('input', () => {
         sendBtn.disabled = userInput.value.trim() === '';
@@ -787,20 +828,15 @@ async function shareChat() {
         new Blob(
             [data.chat],
             {
-                type:
-                'text/plain'
+                type:'text/plain'
             }
         );
 
         const a =
-        document.createElement(
-            'a'
-        );
+        document.createElement('a');
 
         a.href =
-        URL.createObjectURL(
-            blob
-        );
+        URL.createObjectURL(blob);
 
         a.download =
         'maisha_chat.txt';

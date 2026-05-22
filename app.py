@@ -6,7 +6,6 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from groq import Groq
 from flask import jsonify
-
 app = Flask(__name__)
 
 # 1. USALAMA WA CRYPTOGRAPHY KEY
@@ -173,25 +172,35 @@ with app.app_context():
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
 
-@app.route('/api/settings')
-def settings():
-    return jsonify({
-        "theme": "dark",
-        "language": "sw"
-    })
-
-
 @app.route(
     '/api/share_chat',
     methods=['POST']
 )
+@login_required
 def share_chat():
 
-    # mfano tu
-    chat_history = (
-        "Historia ya chat "
-        "itatoka hapa"
-    )
+    chats = ChatHistory.query.filter_by(
+        user_id=current_user.id
+    ).order_by(
+        ChatHistory.timestamp.asc()
+    ).all()
+
+    lines = []
+
+    for chat in chats:
+
+        sender = (
+            "WEWE"
+            if chat.sender == "user"
+            else "MAISHA AI"
+        )
+
+        lines.append(
+            f"{sender}: "
+            f"{chat.message}"
+        )
+
+    chat_history = "\n\n".join(lines)
 
     return jsonify({
         "chat":
