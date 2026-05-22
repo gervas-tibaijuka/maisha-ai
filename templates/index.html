@@ -1,75 +1,237 @@
 <!DOCTYPE html>
-
 <html lang="sw">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maisha AI</title>
+<meta charset="UTF-8">
+<title>Maisha AI v2</title>
 
-```
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-```
+<style>
+:root{
+    --bg:#0d0f12;
+    --panel:#111318;
+    --surface:#1a1d24;
+    --border:rgba(255,255,255,0.08);
+    --text:#e8eaf0;
+    --muted:#8b90a0;
+    --accent:#4f8ef7;
+    --user:#1d4ed8;
+}
 
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui;}
+
+body{
+    display:flex;
+    height:100vh;
+    background:var(--bg);
+    color:var(--text);
+}
+
+/* SIDEBAR */
+.sidebar{
+    width:260px;
+    background:var(--panel);
+    padding:15px;
+    display:flex;
+    flex-direction:column;
+}
+
+.newchat{
+    padding:10px;
+    background:var(--accent);
+    border:none;
+    color:white;
+    border-radius:8px;
+    cursor:pointer;
+    margin-bottom:10px;
+}
+
+.chat-list{
+    flex:1;
+    overflow:auto;
+}
+
+.chat-item{
+    padding:10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:13px;
+    color:var(--muted);
+}
+.chat-item:hover{
+    background:var(--surface);
+    color:white;
+}
+
+/* MAIN */
+.main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+}
+
+.topbar{
+    height:50px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    padding:0 15px;
+}
+
+/* CHAT */
+.chat{
+    flex:1;
+    overflow:auto;
+    padding:20px;
+}
+
+.msg{
+    max-width:70%;
+    margin-bottom:12px;
+    padding:10px 14px;
+    border-radius:10px;
+    line-height:1.5;
+    font-size:14px;
+}
+
+.user{
+    background:var(--user);
+    margin-left:auto;
+}
+
+.ai{
+    background:var(--surface);
+}
+
+/* INPUT */
+.inputbox{
+    display:flex;
+    padding:10px;
+    border-top:1px solid var(--border);
+}
+
+input{
+    flex:1;
+    padding:12px;
+    border:none;
+    outline:none;
+    border-radius:8px;
+    background:var(--surface);
+    color:white;
+}
+
+button{
+    margin-left:10px;
+    padding:12px 16px;
+    border:none;
+    background:var(--accent);
+    color:white;
+    border-radius:8px;
+    cursor:pointer;
+}
+</style>
 </head>
 
 <body>
 
-<div class="app">
-
-```
 <!-- SIDEBAR -->
-<aside class="sidebar">
-
-    <div class="logo">
-        🧠 <span>Maisha AI</span>
-    </div>
-
-    <button class="new-chat" onclick="newChat()">+ New Chat</button>
-
-    <div class="history" id="historyBox">
-        {% for chat in past_messages %}
-            <div class="history-item">
-                {{ chat.message[:30] }}...
-            </div>
-        {% endfor %}
-    </div>
-
-    <div class="sidebar-bottom">
-        <button onclick="toggleTheme()">🌗 Theme</button>
-        <button onclick="logout()">🚪 Logout</button>
-    </div>
-
-</aside>
+<div class="sidebar">
+    <button class="newchat" onclick="newChat()">+ New Chat</button>
+    <div id="chatList" class="chat-list"></div>
+</div>
 
 <!-- MAIN -->
-<main class="main">
+<div class="main">
 
-    <div class="chat-box" id="chatBox">
+<div class="topbar">
+    <b>Maisha AI</b>
+</div>
 
-        {% for msg in past_messages %}
-            <div class="msg {{ msg.sender }}">
-                {{ msg.message }}
-            </div>
-        {% endfor %}
+<div id="chat" class="chat"></div>
 
-    </div>
-
-    <div class="typing" id="typing" style="display:none;">
-        AI is typing...
-    </div>
-
-    <div class="input-box">
-        <textarea id="input" placeholder="Andika ujumbe..."></textarea>
-        <button onclick="sendMessage()">Send</button>
-    </div>
-
-</main>
-```
+<div class="inputbox">
+    <input id="text" placeholder="Andika ujumbe..." />
+    <button onclick="send()">Send</button>
+</div>
 
 </div>
 
-<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+
+let currentChatId = null;
+
+// LOAD chats
+async function loadChats(){
+    let res = await fetch('/api/chats');
+    let data = await res.json();
+
+    let list = document.getElementById('chatList');
+    list.innerHTML = '';
+
+    data.chats.forEach(c=>{
+        let div = document.createElement('div');
+        div.className='chat-item';
+        div.innerText = c.title;
+        div.onclick = ()=>openChat(c.id);
+        list.appendChild(div);
+    });
+}
+
+// OPEN chat
+async function openChat(id){
+    currentChatId = id;
+
+    let res = await fetch('/api/chat/'+id);
+    let data = await res.json();
+
+    let chat = document.getElementById('chat');
+    chat.innerHTML='';
+
+    data.messages.forEach(m=>{
+        let div = document.createElement('div');
+        div.className='msg '+(m.sender=='user'?'user':'ai');
+        div.innerText = m.message;
+        chat.appendChild(div);
+    });
+}
+
+// NEW chat
+async function newChat(){
+    let res = await fetch('/api/chat/new');
+    let data = await res.json();
+    currentChatId = data.id;
+    loadChats();
+    document.getElementById('chat').innerHTML='';
+}
+
+// SEND message
+async function send(){
+    let text = document.getElementById('text').value;
+    if(!text) return;
+
+    let chat = document.getElementById('chat');
+
+    // user msg
+    chat.innerHTML += `<div class='msg user'>${text}</div>`;
+
+    document.getElementById('text').value='';
+
+    let res = await fetch('/api/chat/send',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            chat_id:currentChatId,
+            message:text
+        })
+    });
+
+    let data = await res.json();
+
+    chat.innerHTML += `<div class='msg ai'>${data.response}</div>`;
+}
+
+// init
+loadChats();
+
+</script>
 
 </body>
 </html>
