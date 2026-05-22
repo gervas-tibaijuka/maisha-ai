@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maisha AI - Mshauri wako wa Kazi na Maisha</title>
+    
+    <!-- CSS Imeingizwa Humu Humu Ndani (Inlined CSS) -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2563eb;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            max-width: 80%;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .ai-message {
+            background: #e2e8f0;
+            color: #1e293b;
+            align-self: flex-start;
+        }
+
+        .user-message {
+            background: #2563eb;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .quick-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            padding: 10px 20px;
+            background: #fff;
+        }
+
+        .quick-buttons button {
+            padding: 10px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+
+        .quick-buttons button:hover {
+            background: #2563eb;
+            color: white;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 15px;
+            background: #fff;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        #sendBtn {
+            padding: 12px 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Logo na Kichwa cha Habari -->
+        <div class="header">
+            <h1>🧠 Maisha AI</h1>
+            <p>“Kusaidia vijana wa Afrika kufanya maamuzi bora kwenye maisha ya kila siku.”</p>
+        </div>
+
+        <!-- Sehemu ya Maongezi (Chat Box) -->
+        <div class="chat-box" id="chatBox">
+            <div class="message ai-message">
+                Habari! Mimi ni Maisha AI. Una jambo gani leo kuhusu Mahusiano, Shule, Biashara au Hamasa?
+            </div>
+        </div>
+
+        <!-- Vifungo vya Maswali ya Haraka (Quick Buttons) -->
+        <div class="quick-buttons">
+            <button onclick="quickQuestion('Nimjibuje huyu mtu?')">💞 Relationship</button>
+            <button onclick="quickQuestion('Nimekata tamaa kusoma')">📚 School</button>
+            <button onclick="quickQuestion('Nina 100,000 nifanye biashara gani?')">💰 Business</button>
+            <button onclick="quickQuestion('Nipe hamasa ya leo')">🔥 Motivation</button>
+        </div>
+
+        <!-- Sehemu ya Kuandikia Ujumbe -->
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Andika ujumbe wako hapa...">
+            <button id="sendBtn">Tuma</button>
+        </div>
+    </div>
+
+    <!-- JavaScript Imeingizwa Humu Humu Ndani (Inlined JS) -->
+    <script>
+        document.getElementById("sendBtn").addEventListener("click", sendMessage);
+        document.getElementById("userInput").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            let inputField = document.getElementById("userInput");
+            let messageText = inputField.value.trim();
+
+            if (messageText === "") return;
+
+            // 1. Onyesha ujumbe wa mtumiaji kwenye chat box
+            appendMessage(messageText, "user-message");
+            inputField.value = "";
+
+            // 2. Tuma ujumbe kwenda kwenye Flask Backend
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: messageText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 3. Onyesha jibu linalotoka kwenye Flask
+                appendMessage(data.response, "ai-message");
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                appendMessage("Kuna hitilafu imetokea. Hakikisha Flask inarun.", "ai-message");
+            });
+        }
+
+        function quickQuestion(questionText) {
+            document.getElementById("userInput").value = questionText;
+            sendMessage();
+        }
+
+        function appendMessage(text, senderClass) {
+            let chatBox = document.getElementById("chatBox");
+            let messageDiv = document.createElement("div");
+            messageDiv.classList.add("message", senderClass);
+            messageDiv.innerText = text;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
