@@ -410,6 +410,20 @@
             .suggestion-grid { grid-template-columns: 1fr; }
             .topbar { padding: 0 14px; }
         }
+        /* LIGHT THEME */
+        body.light-theme {
+    --bg: #f4f6fb;
+    --sidebar-bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #eef2f7;
+    --border: rgba(0,0,0,0.08);
+    --border-hover: rgba(0,0,0,0.15);
+    --text: #111827;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --ai-bubble: #ffffff;
+    --user-bubble: #dbeafe;
+}
     </style>
 </head>
 <body>
@@ -471,10 +485,10 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div class="topbar-right">
-            <button class="icon-btn" title="Gawana">
+            <button class="icon-btn" title="Gawana" onclick="shareChat()">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             </button>
-            <button class="icon-btn" title="Mipangilio">
+            <button class="icon-btn" title="Akaunti" onclick="window.location.href='/account'">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
             </button>
         </div>
@@ -702,6 +716,113 @@
             }, 2000);
         });
     }
+    
+    // =====================
+// SETTINGS
+// =====================
+async function loadSettings() {
+    try {
+        const res = await fetch('/api/settings');
+        const settings = await res.json();
+
+        applyTheme(settings.theme);
+        applyLanguage(settings.language);
+
+    } catch (error) {
+        console.error(
+            'Settings error:',
+            error
+        );
+    }
+}
+
+function applyTheme(theme) {
+    if (theme === 'light') {
+        document.body.classList.add(
+            'light-theme'
+        );
+    } else {
+        document.body.classList.remove(
+            'light-theme'
+        );
+    }
+}
+
+function applyLanguage(lang) {
+
+    // mfano mdogo wa language
+    if (lang === 'en') {
+
+        const logoSub =
+        document.querySelector(
+            '.logo-sub'
+        );
+
+        if (logoSub) {
+            logoSub.textContent =
+            'Your Life Assistant';
+        }
+    }
+}
+{
+// =====================
+// SHARE CHAT
+// =====================
+async function shareChat() {
+
+    try {
+
+        const res =
+        await fetch(
+            '/api/share_chat',
+            {
+                method:'POST'
+            }
+        );
+
+        const data =
+        await res.json();
+
+        const blob =
+        new Blob(
+            [data.chat],
+            {
+                type:
+                'text/plain'
+            }
+        );
+
+        const a =
+        document.createElement(
+            'a'
+        );
+
+        a.href =
+        URL.createObjectURL(
+            blob
+        );
+
+        a.download =
+        'maisha_chat.txt';
+
+        a.click();
+
+    } catch (error) {
+
+        appendMessage(
+            'Imeshindikana kushare chat.',
+            'ai'
+        );
+    }
+}
+
+// =====================
+// LOAD SETTINGS
+// =====================
+document.addEventListener(
+    'DOMContentLoaded',
+    loadSettings
+);}
 </script>
 </body>
 </html>

@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from groq import Groq
+from flask import jsonify
 
 app = Flask(__name__)
 
@@ -171,3 +172,28 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
+@app.route('/api/settings')
+def settings():
+    return jsonify({
+        "theme": "dark",
+        "language": "sw"
+    })
+
+
+@app.route(
+    '/api/share_chat',
+    methods=['POST']
+)
+def share_chat():
+
+    # mfano tu
+    chat_history = (
+        "Historia ya chat "
+        "itatoka hapa"
+    )
+
+    return jsonify({
+        "chat":
+        chat_history
+    })
