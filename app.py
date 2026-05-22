@@ -10,8 +10,14 @@ from datetime import datetime
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'maisha_ai_secret_key_123'
 
-# 1. Unganisha na PostgreSQL (Hakikisha password yako ipo sawa hapa)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "postgresql://postgres:maisha-ai@localhost:5432/maishadb")
+# 1. Fetch the database URL from Render environment variables safely
+db_url = os.environ.get("DATABASE_URL", "postgresql://postgres:PASSWORD_YAKO@localhost:5432/maishadb")
+
+# Render sometimes uses "postgres://", but SQLAlchemy requires "postgresql://"
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
