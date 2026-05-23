@@ -1,11 +1,10 @@
 import os
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from groq import Groq
-from flask import jsonify
 
 app = Flask(__name__)
 
@@ -30,17 +29,35 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# 4. DATABASE MODELS (Majedwali ya Watumiaji na Maongezi)
+# 4. ADVANCED DATABASE MODELS (Muundo Mpya wa ChatGPT-Style)
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
+    # Mahusiano na conversations zake
+    conversations = db.relationship('Conversation', backref='user', lazy=True, cascade="all, delete-orphan")
 
-class ChatHistory(db.Model):
-    __tablename__ = 'chat_history'
+class Conversation(db.Model):
+    __tablename__ = 'conversations'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    title = db.Column(db.String(255), nullable=False, default='Mazungumzo Mapya')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Mahusiano na meseji zilizopo ndani yake
+    messages = db.relationship('ChatMessage', backref='conversation', lazy=True, cascade="all, delete-orphan")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "created_at": self.created_at.isoformat()
+        }
+
+class ChatMessage(db.Model):
+    __tablename__ = 'chat_messages'
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.id', ondelete='CASCADE'), nullable=False)
     sender = db.Column(db.String(10), nullable=False)  # 'user' au 'ai'
     message = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -66,15 +83,14 @@ Sheria za Majibu (ChatGPT Style):
 - Ongea kwa lugha ya "Swanglish" ya mtaani inayovutia (Changanya Kiswahili na Kiingereza cha kawaida cha Dar es Salaam).
 - Tumia mifano halisi ya Kitanzania (mfano: bando la simu, fremu mtaani, bodaboda, kupambana duka la nguo, daladala).
 - Majibu yako yawe mafupi, yasiyo na maneno mengi yasiyo na tija, na yagawanywe kwa aya fupi au pointi ili yaonekane nadhifu kwenye screen.
+- Unaruhusiwa kutumia Markdown vizuri sana (**bold**, tables, bulleted lists, na code blocks zenye lugha husika).
 """
 
 # 6. APP ROUTES (Mifumo ya Kurasa)
 @app.route('/')
 @login_required
 def home():
-    # Pakia historia kamili ya mtumiaji huyu kwa mpangilio sahihi wa muda
-    past_messages = ChatHistory.query.filter_by(user_id=current_user.id).order_by(ChatHistory.timestamp.asc()).all()
-    return render_template('index.html', username=current_user.username, past_messages=past_messages)
+    return render_template('index.html', username=current_user.username)
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -114,59 +130,134 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/new_chat')
-@login_required
-def new_chat():
-    # Kufuta historia ya sasa ya maongezi kuanza upya safi kabisa (ChatGPT style)
-    ChatHistory.query.filter_by(user_id=current_user.id).delete()
-    db.session.commit()
-    return redirect(url_for('home'))
 
-# 7. CHAT CORE API (Mfumo wenye Smart Context History-Memory)
-@app.route('/api/chat', methods=['POST'])
+# 7. CONVERSATION MANAGEMENT API ENDPOINTS (ChatGPT Core Navigation)
+
+@app.route('/api/conversations', methods=['GET'])
 @login_required
-def chat():
-    data = request.json
-    user_message = data.get('message', '').strip()
+def get_conversations():
+    # Pakia orodha ya soga zote za mtumiaji kwa mpangilio wa mpya kwanza
+    conversations = Conversation.query.filter_by(user_id=current_user.id).order_by(Conversation.created_at.desc()).all()
+    return jsonify([c.to_dict() for c in conversations])
+
+@app.route('/api/conversations/create', methods=['POST'])
+@login_required
+def create_conversation():
+    data = request.json or {}
+    title = data.get('title', 'Mazungumzo Mapya').strip()
     
-    if not user_message:
-        return jsonify({"response": "Tafadhali andika ujumbe wako..."})
-        
-    try:
-        # Hifadhi ujumbe wa mteja kwanza kwenye PostgreSQL
-        user_chat = ChatHistory(user_id=current_user.id, sender='user', message=user_message)
-        db.session.add(user_chat)
-        db.session.commit()
-        
-        # Pakia meseji 8 zilizopita ili kutengeneza kumbukumbu imara (AI Memory Context)
-        history_records = ChatHistory.query.filter_by(user_id=current_user.id).order_by(ChatHistory.timestamp.desc()).limit(8).all()
-        history_records.reverse()
-        
-        # Jenga mjumuisho safi wa data za kutuma Groq
-        messages_payload = [{"role": "system", "content": SYSTEM_PROMPT}]
-        for record in history_records:
-            role = "user" if record.sender == 'user' else "assistant"
-            messages_payload.append({"role": role, "content": record.message})
-            
-        # Piga simu kwenda kwenye akili ya Llama 3.3 kupitia Groq API
-        completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=messages_payload
-        )
-        ai_response = completion.choices[0].message.content
-        
-        # Hifadhi jibu la AI ndani ya database ya PostgreSQL
-        ai_chat = ChatHistory(user_id=current_user.id, sender='ai', message=ai_response)
-        db.session.add(ai_chat)
-        db.session.commit()
-        
-        return jsonify({"response": ai_response})
-        
-    except Exception as e:
-        print(f"Server Core Error: {e}")
-        return jsonify({"response": f"Samahani, kuna hitilafu ya kiufundi imetokea: {e}"})
+    new_conv = Conversation(user_id=current_user.id, title=title[:50])
+    db.session.add(new_conv)
+    db.session.commit()
+    return jsonify(new_conv.to_dict())
 
-# Tengeneza majedwali mapya ya mifumo kiotomatiki yakikosekana
+@app.route('/api/conversations/<int:conv_id>', methods=['GET'])
+@login_required
+def get_conversation_messages(conv_id):
+    conv = Conversation.query.filter_by(id=conv_id, user_id=current_user.id).first_or_404()
+    # Pakia meseji zote zilizopo kwenye soga hii mahususi
+    messages = ChatMessage.query.filter_by(conversation_id=conv.id).order_by(ChatMessage.timestamp.asc()).all()
+    
+    return jsonify({
+        "conversation": conv.to_dict(),
+        "messages": [{"sender": m.sender, "text": m.message} for m in messages]
+    })
+
+@app.route('/api/conversations/rename', methods=['POST'])
+@login_required
+def rename_conversation():
+    data = request.json or {}
+    conv_id = data.get('id')
+    new_title = data.get('title', '').strip()
+    
+    if not conv_id or not new_title:
+        return jsonify({"error": "Data hazijakamilika"}), 400
+        
+    conv = Conversation.query.filter_by(id=conv_id, user_id=current_user.id).first_or_404()
+    conv.title = new_title[:50]
+    db.session.commit()
+    return jsonify(conv.to_dict())
+
+@app.route('/api/conversations/delete/<int:conv_id>', methods=['DELETE'])
+@login_required
+def delete_conversation(conv_id):
+    conv = Conversation.query.filter_by(id=conv_id, user_id=current_user.id).first_or_404()
+    db.session.delete(conv)
+    db.session.commit()
+    return jsonify({"success": True})
+
+@app.route('/api/conversations/clear_all', methods=['POST'])
+@login_required
+def clear_all_conversations():
+    Conversation.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
+    return jsonify({"success": True})
+
+
+# 8. REAL STREAMING ENGINE API (Server-Sent Events)
+
+@app.route('/api/chat/stream', methods=['POST'])
+@login_required
+def chat_stream():
+    data = request.json or {}
+    user_message = data.get('message', '').strip()
+    conv_id = data.get('conversation_id')
+    
+    if not user_message or not conv_id:
+        return jsonify({"error": "Ujumbe au ID ya soga haijapatikana"}), 400
+
+    # Hakikisha soga ni ya mtumiaji aliyelogin
+    conv = Conversation.query.filter_by(id=conv_id, user_id=current_user.id).first_or_404()
+
+    # 1. Hifadhi ujumbe wa mtumiaji kwenye DB mara moja
+    user_msg_record = ChatMessage(conversation_id=conv.id, sender='user', message=user_message)
+    db.session.add(user_msg_record)
+    db.session.commit()
+
+    # 2. Pakia kumbukumbu ya maongezi yaliyopita (Memory Context - Limit 10)
+    history_records = ChatMessage.query.filter_by(conversation_id=conv.id).order_by(ChatMessage.timestamp.desc()).limit(10).all()
+    history_records.reverse()
+
+    # 3. Jenga payload ya Groq API
+    messages_payload = [{"role": "system", "content": SYSTEM_PROMPT}]
+    for record in history_records:
+        role = "user" if record.sender == 'user' else "assistant"
+        messages_payload.append({"role": role, "content": record.message})
+
+    # Generator function inayotuma data kipande kwa kipande (Streaming Generator)
+    def generate_stream_tokens():
+        try:
+            # Piga simu Groq ukiwasha mfumo wa streaming
+            completion = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages_payload,
+                stream=True
+            )
+            
+            ai_full_reply = ""
+            for chunk in completion:
+                if chunk.choices[0].delta.content:
+                    token = chunk.choices[0].delta.content
+                    ai_full_reply += token
+                    yield token  # Tuma token moja kwa moja kwenda UI bila kupitia Event wrapper
+            
+            # Streaming ikimalizika kwa mafanikio, hifadhi jibu kamili la AI kwenye DB
+            if ai_full_reply.strip():
+                # Tunafungua app context mpya ndani ya thread kuhakikisha usalama wa DB session
+                with app.app_context():
+                    ai_msg_record = ChatMessage(conversation_id=conv.id, sender='ai', message=ai_full_reply)
+                    db.session.add(ai_msg_record)
+                    db.session.commit()
+
+        except Exception as e:
+            print(f"Streaming Engine Fault: {e}")
+            yield f"\n[Hitilafu ya Kiufundi]: {str(e)}"
+
+    # Rejesha token kama text stream safi inayosomeka moja kwa moja na JavaScript `reader.read()`
+    return Response(generate_stream_tokens(), mimetype='text/plain')
+
+
+# Inua majedwali mapya kiotomatiki kama yakikosekana
 with app.app_context():
     db.create_all()
 
