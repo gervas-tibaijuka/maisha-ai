@@ -360,57 +360,228 @@
             }
             .sidebar-overlay.show { display: block; }
         }
+        /* --- TOGGLE BUTTON STYLE --- */
+.sidebar-toggle-btn {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1000;
+    background: #202123;
+    color: #fff;
+    border: 1px solid #4d4d4f;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-toggle-btn:hover {
+    background: #353740;
+}
+
+/* --- OVERLAY FOR MOBILE --- */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* --- NEW SIDEBAR STYLE (DYNAMIC) --- */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    background-color: #202123;
+    color: #fff;
+    z-index: 999;
+    transform: translateX(-100%); /* Inajificha by default */
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+}
+
+/* Hii itaitwa na JS kufungua sidebar */
+.sidebar.open {
+    transform: translateX(0);
+}
+
+.sidebar.open + .sidebar-overlay {
+    display: block;
+    opacity: 1;
+}
+
+/* --- ADJUST MAIN CHAT CONTAINER --- */
+/* Ili chumba cha chat kisibane kitufe cha juu kushoto, tunaongeza padding juu au pembeni */
+.main-container {
+    margin-left: 0; /* Haitegemei tena static sidebar */
+    width: 100%;
+    min-height: 100vh;
+    padding-top: 60px; /* Nafasi ya kitufe cha juu */
+    transition: all 0.3s ease;
+}
+
+/* Vitufe vya ndani ya Sidebar Header */
+.sidebar-header {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.new-chat-btn {
+    flex: 1;
+    background: transparent;
+    color: #fff;
+    border: 1px solid #4d4d4f;
+    border-radius: 5px;
+    padding: 12px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.new-chat-btn:hover {
+    background: #2a2b32;
+}
+
+.close-sidebar-btn {
+    background: transparent;
+    color: #8e8ea0;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+/* Footer & Account Information Layout */
+.sidebar-footer {
+    border-top: 1px solid #4d4d4f;
+    padding: 15px;
+    background: #171719;
+}
+
+.user-account-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.user-avatar i {
+    font-size: 32px;
+    color: #10a37f;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.username-text {
+    font-weight: bold;
+    font-size: 14px;
+    color: #ececf1;
+}
+
+.user-status {
+    font-size: 11px;
+    color: #10a37f;
+}
+
+.footer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.footer-action-btn {
+    background: transparent;
+    border: none;
+    color: #ececf1;
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.footer-action-btn:hover {
+    background: #2a2b32;
+}
+
+.text-danger {
+    color: #ff4d4d !important;
+}
     </style>
 </head>
 <body>
 
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+<!-- Kitufe cha Juu Kushoto cha Kufungua/Kufunga Sidebar -->
+<button id="sidebarToggle" class="sidebar-toggle-btn" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</button>
 
-<!-- Sidebar Component -->
-<aside class="sidebar" id="sidebar">
-    <div class="logo">
-        <div class="logo-icon">🧠</div>
-        <div>
-            <div class="logo-text">Maisha AI</div>
-            <div class="logo-sub">Mshauri wako wa kazi v2.0</div>
-        </div>
-    </div>
+<!-- Kizibo cha nyuma (Overlay) kikionekana kwenye simu -->
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <div class="sidebar-actions">
-        <button class="new-chat-btn" onclick="startNewChat()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Mazungumzo Mapya
+<!-- Sidebar iliyoboreshwa -->
+<aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+        <button class="new-chat-btn" onclick="createNewConversationFromUI()">
+            <i class="fas fa-plus"></i> Soga Mpya
+        </button>
+        <!-- Kitufe cha kufunga kikiwa ndani ya sidebar (kwa ajili ya simu) -->
+        <button class="close-sidebar-btn" onclick="toggleSidebar()">
+            <i class="fas fa-times"></i>
         </button>
     </div>
 
-    <div class="search-wrapper">
-        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" class="search-history" id="searchHistory" placeholder="Tafuta mazungumzo..." onInput="filterHistory()">
+    <!-- Sehemu ya Orodha ya Maongezi ya Nyuma -->
+    <div class="conversations-wrapper" id="conversationsContainer">
+        <div class="sidebar-section-title">Historia ya Soga</div>
+        <div id="conversationsList">
+            <!-- Mazungumzo yatajazwa hapa na JS -->
+        </div>
     </div>
 
-    <div class="sidebar-section">Historia ya Mazungumzo</div>
-    <div class="history-list" id="historyList">
-        <!-- System Load Skeletons or Dynamic Items via Javascript Architecture -->
-    </div>
-
+    <!-- Sehemu ya Chini: Akaunti na Features Zingine -->
     <div class="sidebar-footer">
-        <div class="profile-dropdown" id="profileDropdown">
-            <div class="dropdown-item" onclick="openModal('settingsModal')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                Mipangilio (Settings)
+        <div class="user-account-box">
+            <div class="user-avatar">
+                <i class="fas fa-user-circle"></i>
             </div>
-            <div class="dropdown-item" onclick="exportChatText()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Pakua Chat (.txt)
+            <div class="user-info">
+                <span class="username-text">{{ username }}</span>
+                <span class="user-status">Akaunti Amilifu</span>
             </div>
         </div>
-        <div class="profile-card" onclick="toggleProfileDropdown(event)">
-            <div class="avatar" id="userAvatar">M</div>
-            <div class="profile-info">
-                <div class="name" id="profileName">Mtumiaji Maisha</div>
-                <div class="plan">Akaunti ya Bure</div>
-            </div>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+        
+        <div class="footer-actions">
+            <button class="footer-action-btn text-danger" onclick="clearAllConversationsFromUI()">
+                <i class="fas fa-trash-alt"></i> Futa Soga Zote
+            </button>
+            <a href="/logout" class="footer-action-btn logout-link">
+                <i class="fas fa-sign-out-alt"></i> Ondoka (Logout)
+            </a>
         </div>
     </div>
 </aside>
@@ -519,6 +690,7 @@
 
 <!-- Implementation Logic: Javascript Clean Architecture Core Layer -->
 <script>
+    
     // State Architecture Management
     let state = {
         conversations: [],
@@ -1001,6 +1173,91 @@
     function escapeJsString(str) {
         return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
     }
+    // Function ya kuwasha na kuzima Sidebar (Slide-in / Slide-out)
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        overlay.style.display = 'none';
+        overlay.style.opacity = '0';
+    } else {
+        sidebar.classList.add('open');
+        overlay.style.display = 'block';
+        setTimeout(() => { overlay.style.opacity = '1'; }, 10);
+    }
+}
+
+// Tukio la kufunga sidebar mtumiaji akichagua soga fulani (kwa screen ndogo)
+function selectConversationFromUI(convId) {
+    // Piga API ya kupakia meseji (Msimbo wako wa zamani wa kubadili chat)
+    loadConversationMessages(convId); 
+    
+    // Kama yuko kwenye simu, funga sidebar kiotomatiki baada ya kuchagua soga
+    if (window.innerWidth < 768) {
+        toggleSidebar();
+    }
+}
+function createNewConversationFromUI() {
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    // 1. Safisha eneo la kuandikia mara moja
+    if (userInput) {
+        userInput.value = '';
+        userInput.style.height = 'auto'; 
+    }
+    
+    // 2. Rudisha ulinzi wa mfumo (Reset State)
+    state.isGenerating = false; 
+    if (sendBtn) {
+        sendBtn.disabled = true; // Kitufe kinajifunga hadi user aandike kitu
+    }
+
+    // 3. Piga simu Flask kutengeneza Soga Mpya kwenye Database bila kurefresh
+    fetch('/api/conversations/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ title: 'Mazungumzo Mapya' })
+    })
+    .then(response => response.json())
+    .then(newConv => {
+        // Hifadhi ID ya soga mpya tuliyopewa na PostgreSQL
+        state.currentConversationId = newConv.id;
+        
+        // Safisha screen ya chat iwe safi kabisa
+        const chatWindow = document.getElementById('chatWindow');
+        if (chatWindow) {
+            chatWindow.innerHTML = `
+                <div class="welcome-container" style="text-align:center; margin-top:100px; color:#8e8ea0;">
+                    <i class="fas fa-comments" style="font-size: 48px; color: #10a37f; margin-bottom:15px;"></i>
+                    <h3>Mambo vipi! Naitwa Maisha AI.</h3>
+                    <p>Nikupe ushauri wa nini leo? Tuongee michongo ya biashara, shule au maisha mzee.</p>
+                </div>
+            `;
+        }
+        
+        // Huu msimbo unaitwa ule unaopakia upya majina ya soga kwenye sidebar
+        if (typeof fetchConversationsFromDatabase === 'function') {
+            fetchConversationsFromDatabase();
+        } else if (typeof loadConversations === 'function') {
+            loadConversations(); // Kama ulipa jina hili
+        }
+        
+        // Funga sidebar kama yuko kwenye simu
+        if (window.innerWidth < 768 && typeof toggleSidebar === 'function') {
+            toggleSidebar();
+        }
+        
+        if (userInput) userInput.focus();
+    })
+    .catch(error => {
+        console.error('Error creating conversation:', error);
+    });
+}
 </script>
 </body>
 </html>
