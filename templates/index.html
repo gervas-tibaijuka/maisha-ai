@@ -469,7 +469,7 @@
     <div class="input-zone">
         <div class="input-box">
             <div class="input-row">
-                <textarea id="userInput" rows="1" placeholder="Andika ujumbe au swali lako hapa..." onInput="autoResizeInput(this)" onKeyDown="handleInputKeys(event)"></textarea>
+                <textarea id="userInput" rows="1" placeholder="Andika ujumbe au swali lako hapa..." onKeyDown="handleInputKeys(event)"></textarea>
                 <div class="input-controls">
                     <button class="stop-btn" id="stopBtn" title="Sitisha kuandika" onclick="abortStreamingConnection()">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
@@ -536,15 +536,21 @@
         setupDropdownCloser();
     });
 
-    function initializeApplicationState() {
+  function initializeApplicationState() {
         // Load initial state configurations from database via API
         fetchConversationsFromDatabase();
         
-        // Input text verification listener
+        // Input text verification listener & Dynamic Resizing
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
+        
         userInput.addEventListener('input', () => {
+            // Washa kitufe kama kuna maandishi, zima kama kiko wazi
             sendBtn.disabled = userInput.value.trim() === '' || state.isGenerating;
+            
+            // Rekebisha urefu wa textarea hapa hapa kiotomatiki
+            userInput.style.height = 'auto';
+            userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
         });
 
         // Setup markdown settings options
@@ -963,10 +969,13 @@
         el.style.height = Math.min(el.scrollHeight, 140) + 'px';
     }
 
-    function handleInputKeys(e) {
+   function handleInputKeys(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            if (!document.getElementById('sendBtn').disabled && !state.isGenerating) {
+            e.preventDefault(); // Zuia isishuke mstari wa chini
+            const text = document.getElementById('userInput').value.trim();
+            
+            // Tuma ujumbe kama mtumiaji ameandika kitu na AI haipo busy kuandika
+            if (text !== '' && !state.isGenerating) {
                 dispatchUserMessage();
             }
         }
