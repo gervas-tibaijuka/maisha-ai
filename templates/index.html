@@ -3,1261 +3,776 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maisha AI - Mshauri wako wa kazi</title>
-    <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Marked.js for Markdown & Prism.js for Code Highlighting -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" id="prism-theme" />
+    <title>Maisha AI - Dashboard</title>
+    <!-- FontAwesome Icons & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Markdown and Prism Highlight JavaScript Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-
+    
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
         :root {
-            --bg: #0d0f12;
-            --sidebar-bg: #111318;
-            --surface: #181b21;
-            --surface-2: #1e2128;
-            --border: rgba(255,255,255,0.07);
-            --border-hover: rgba(255,255,255,0.13);
-            --accent: #4f8ef7;
-            --accent-dim: rgba(79,142,247,0.11);
-            --accent-glow: rgba(79,142,247,0.25);
-            --text: #e8eaf0;
-            --text-muted: #7a7f8e;
-            --text-dim: #4e5260;
-            --user-bubble: #1a3a6b;
-            --user-bubble-border: #2a5bb0;
-            --ai-bubble: #181b21;
-            --font: 'Plus Jakarta Sans', sans-serif;
-            --radius: 14px;
-            --radius-sm: 8px;
-            --sidebar-width: 280px;
-            --topbar-height: 56px;
+            --bg-main: #343541;
+            --bg-sidebar: #202123;
+            --bg-chat-user: #343541;
+            --bg-chat-ai: #444654;
+            --text-main: #ececf1;
+            --text-muted: #8e8ea0;
+            --accent-green: #10a37f;
+            --border-color: #4d4d4f;
         }
 
-        body.light-theme {
-            --bg: #f4f6fb;
-            --sidebar-bg: #ffffff;
-            --surface: #ffffff;
-            --surface-2: #eef2f7;
-            --border: rgba(0,0,0,0.08);
-            --border-hover: rgba(0,0,0,0.15);
-            --text: #111827;
-            --text-muted: #6b7280;
-            --text-dim: #9ca3af;
-            --ai-bubble: #eef2f7;
-            --user-bubble: #4f8ef7;
-            --user-bubble-border: #3b82f6;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
         }
-        body.light-theme .msg-bubble.user { color: #ffffff; }
 
         body {
-            font-family: var(--font);
-            background: var(--bg);
-            color: var(--text);
-            display: flex;
-            height: 100vh;
+            background-color: var(--bg-main);
+            color: var(--text-main);
             overflow: hidden;
-            transition: background 0.3s, color 0.3s;
+            height: 100vh;
+            display: flex;
         }
 
-        /* App Layout */
+        /* --- SIDEBAR TOGGLE BUTTON --- */
+        .sidebar-toggle-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            background: var(--bg-sidebar);
+            color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-toggle-btn:hover {
+            background: #353740;
+        }
+
+        /* --- SIDEBAR OVERLAY --- */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* --- COLLAPSIBLE SIDEBAR --- */
         .sidebar {
-            width: var(--sidebar-width);
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100vh;
+            background-color: var(--bg-sidebar);
+            color: #fff;
+            z-index: 999;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
             display: flex;
             flex-direction: column;
-            padding: 16px 12px;
-            flex-shrink: 0;
-            transition: transform 0.3s ease, background 0.3s;
-            z-index: 100;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.3);
         }
 
-        .main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+        .sidebar.open {
+            transform: translateX(0);
+        }
 
-        /* Sidebar Header & Tools */
-        .logo {
+        .sidebar.open ~ .sidebar-overlay {
+            display: block;
+            opacity: 1;
+        }
+
+        .sidebar-header {
+            padding: 15px 10px;
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
         }
-        .logo-icon {
-            width: 36px; height: 36px;
-            background: linear-gradient(135deg, #4f8ef7, #7c5ff5);
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; color: white;
-        }
-        .logo-text { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
-        .logo-sub { font-size: 11px; color: var(--text-muted); }
 
-        .sidebar-actions { display: flex; gap: 8px; margin-top: 16px; margin-bottom: 12px; }
         .new-chat-btn {
-            flex: 1; padding: 10px 14px;
-            background: var(--accent-dim);
-            border: 1px solid rgba(79,142,247,0.3);
-            border-radius: var(--radius-sm);
-            color: var(--accent);
-            font-family: var(--font); font-size: 13px; font-weight: 600;
-            cursor: pointer; display: flex; align-items: center; gap: 8px;
+            flex: 1;
+            background: transparent;
+            color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 12px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+
+        .new-chat-btn:hover {
+            background: #2a2b32;
+        }
+
+        .close-sidebar-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        /* Conversations Container */
+        .conversations-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 10px;
+        }
+
+        .sidebar-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .conv-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            font-size: 13px;
+            transition: background 0.2s;
+            color: #ececf1;
+        }
+
+        .conv-item:hover, .conv-item.active {
+            background: #2a2b32;
+        }
+
+        .conv-title-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        .conv-actions i {
+            color: var(--text-muted);
+            margin-left: 8px;
+            cursor: pointer;
+        }
+
+        .conv-actions i:hover {
+            color: #fff;
+        }
+
+        /* Sidebar Footer Account section */
+        .sidebar-footer {
+            border-top: 1px solid var(--border-color);
+            padding: 15px;
+            background: #171719;
+        }
+
+        .user-account-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .user-avatar i {
+            font-size: 32px;
+            color: var(--accent-green);
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .username-text {
+            font-weight: bold;
+            font-size: 14px;
+            color: #ececf1;
+        }
+
+        .user-status {
+            font-size: 11px;
+            color: var(--accent-green);
+        }
+
+        .footer-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .footer-action-btn {
+            background: transparent;
+            border: none;
+            color: #ececf1;
+            text-align: left;
+            padding: 8px 10px;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .footer-action-btn:hover {
+            background: #2a2b32;
+        }
+
+        .text-danger {
+            color: #ff4d4d !important;
+        }
+
+        /* --- MAIN CHAT CONTAINER --- */
+        .main-container {
+            flex: 1;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-color: var(--bg-main);
+            padding-top: 60px; /* Nafasi ya Hamburger button */
+        }
+
+        .chat-window {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 120px;
+        }
+
+        /* Chat Rows Framework */
+        .chat-row {
+            padding: 24px 15%;
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .chat-row.user {
+            background-color: var(--bg-main);
+        }
+
+        .chat-row.ai {
+            background-color: var(--bg-chat-ai);
+        }
+
+        .avatar-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .chat-row.user .avatar-box {
+            background-color: #5436da;
+            color: white;
+        }
+
+        .chat-row.ai .avatar-box {
+            background-color: var(--accent-green);
+            color: white;
+        }
+
+        .message-content {
+            flex: 1;
+            color: var(--text-main);
+            font-size: 15px;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        /* Markdown Styling inside responses */
+        .message-content p { margin-bottom: 12px; }
+        .message-content p:last-child { margin-bottom: 0; }
+        .message-content strong { color: #fff; }
+        .message-content ul, .message-content ol { margin-left: 20px; margin-bottom: 12px; }
+        .message-content table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+        .message-content th, .message-content td { border: 1px solid var(--border-color); padding: 8px 12px; text-align: left; }
+        .message-content th { background-color: rgba(255,255,255,0.05); }
+
+        /* Welcome Screen Layout */
+        .welcome-container {
+            text-align: center;
+            max-width: 500px;
+            margin: 100px auto 0 auto;
+            padding: 20px;
+        }
+
+        /* Input Controls Area at bottom */
+        .input-container-wrapper {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(transparent, var(--bg-main) 30%);
+            padding: 20px 15% 30px 15%;
+        }
+
+        .input-bar-box {
+            background-color: #40414f;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: flex-end;
+            padding: 10px 14px;
+            position: relative;
+        }
+
+        .input-bar-box textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-main);
+            font-size: 15px;
+            resize: none;
+            max-height: 140px;
+            row-gap: 0;
+            line-height: 1.5;
+            padding-right: 40px;
+        }
+
+        .send-message-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
             transition: all 0.2s;
         }
-        .new-chat-btn:hover { background: rgba(79,142,247,0.2); }
 
-        .search-wrapper { position: relative; margin-bottom: 12px; }
-        .search-history {
-            width: 100%; padding: 8px 12px 8px 32px;
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius-sm); color: var(--text);
-            font-family: var(--font); font-size: 12.5px; outline: none;
-        }
-        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.4; }
-
-        /* History List & Real Management */
-        .sidebar-section { font-size: 11px; color: var(--text-dim); font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; padding: 0 8px; margin-bottom: 6px; }
-        .history-list { flex: 1; overflow-y: auto; padding-right: 2px; }
-        .history-list::-webkit-scrollbar { width: 4px; }
-        .history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-        .history-item {
-            position: relative; padding: 10px; border-radius: var(--radius-sm);
-            font-size: 13px; color: var(--text-muted); cursor: pointer;
-            display: flex; align-items: center; gap: 10px; margin-bottom: 3px;
-            transition: all 0.2s; group-size: 100%;
-        }
-        .history-item:hover, .history-item.active { background: var(--surface); color: var(--text); }
-        .history-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 45px; }
-        .history-item input {
-            flex: 1; background: transparent; border: none; color: var(--text);
-            font-family: var(--font); font-size: 13px; outline: none; padding: 0;
-        }
-        
-        .history-ops {
-            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-            display: none; gap: 4px;
-        }
-        .history-item:hover .history-ops { display: flex; }
-        .op-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 2px; border-radius: 3px; }
-        .op-btn:hover { color: var(--text); background: var(--surface-2); }
-
-        /* Profile Dropdown & Sidebar Footer */
-        .sidebar-footer { border-top: 1px solid var(--border); padding-top: 12px; position: relative; }
-        .profile-card {
-            display: flex; align-items: center; gap: 10px; padding: 8px;
-            border-radius: var(--radius-sm); cursor: pointer; transition: 0.15s;
-        }
-        .profile-card:hover { background: var(--surface); }
-        .avatar {
-            width: 32px; height: 32px; border-radius: 50%;
-            background: linear-gradient(135deg, #4f8ef7, #7c5ff5);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 700; color: white; flex-shrink: 0;
-        }
-        .profile-info { flex: 1; min-width: 0; }
-        .profile-info .name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .profile-info .plan { font-size: 11px; color: var(--text-muted); }
-
-        .profile-dropdown {
-            position: absolute; bottom: 100%; left: 0; width: 100%;
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius-sm); padding: 6px; margin-bottom: 8px;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.2); display: none; flex-direction: column; z-index: 10;
-        }
-        .profile-dropdown.show { display: flex; }
-        .dropdown-item {
-            padding: 8px 10px; font-size: 13px; border-radius: 6px;
-            color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 8px;
-        }
-        .dropdown-item:hover { background: var(--surface-2); color: var(--text); }
-
-        /* Topbar & Header Elements */
-        .topbar {
-            height: var(--topbar-height); border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; padding: 0 20px; gap: 12px; flex-shrink: 0;
-            background: var(--bg);
-        }
-        .menu-toggle { display: none; width: 34px; height: 34px; align-items: center; justify-content: center; background: transparent; border: 1px solid var(--border); color: var(--text); border-radius: var(--radius-sm); cursor: pointer; }
-        .model-badge {
-            display: flex; align-items: center; gap: 6px; background: var(--surface);
-            border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px;
-            font-size: 12px; font-weight: 600; color: var(--text-muted);
-        }
-        .model-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        .topbar-right { margin-left: auto; display: flex; gap: 8px; }
-        .icon-btn {
-            width: 34px; height: 34px; border-radius: var(--radius-sm);
-            background: transparent; border: 1px solid var(--border);
-            color: var(--text-muted); display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.15s;
-        }
-        .icon-btn:hover { background: var(--surface); border-color: var(--border-hover); color: var(--text); }
-
-        /* Chat Workspace */
-        .chat-area { flex: 1; overflow-y: auto; padding: 24px 20px; display: flex; flex-direction: column; }
-        .chat-area::-webkit-scrollbar { width: 5px; }
-        .chat-area::-webkit-scrollbar-track { background: transparent; }
-        .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        .chat-container { max-width: 800px; width: 100%; margin: 0 auto; flex: 1; display: flex; flex-direction: column; }
-
-        /* Welcome Screen Styling */
-        .welcome-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 65vh; text-align: center; margin: auto; }
-        .welcome-icon {
-            width: 60px; height: 60px; background: linear-gradient(135deg, rgba(79,142,247,0.15), rgba(124,95,245,0.15));
-            border: 1px solid rgba(79,142,247,0.25); border-radius: 18px;
-            display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 16px;
-        }
-        .welcome-title { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
-        .welcome-title span { background: linear-gradient(135deg, #4f8ef7, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .welcome-sub { font-size: 13.5px; color: var(--text-muted); max-width: 420px; line-height: 1.5; margin-bottom: 24px; }
-        .suggestion-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 560px; width: 100%; }
-        .suggestion-card {
-            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-            padding: 12px 14px; cursor: pointer; text-align: left; transition: all 0.2s; display: flex; gap: 10px;
-        }
-        .suggestion-card:hover { border-color: var(--accent); background: var(--accent-dim); transform: translateY(-1px); }
-        .suggestion-card .icon { font-size: 16px; margin-top: 2px; }
-        .suggestion-card .label { font-size: 13px; font-weight: 600; margin-bottom: 1px; }
-        .suggestion-card .hint { font-size: 11.5px; color: var(--text-muted); line-height: 1.3; }
-
-        /* Real Advanced Message Grouping */
-        .message-group { display: flex; gap: 14px; margin-bottom: 28px; width: 100%; animation: fadeIn 0.3s ease; }
-        .message-group.user { flex-direction: row-reverse; }
-        @keyframes fadeIn { from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:translateY(0)} }
-
-        .msg-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; color: white; }
-        .msg-avatar.ai { background: linear-gradient(135deg, #4f8ef7, #7c5ff5); }
-        .msg-avatar.user { background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 700; }
-
-        .msg-content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-        .msg-sender { font-size: 11.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; display: flex; gap: 6px; }
-        .message-group.user .msg-sender { justify-content: flex-end; }
-
-        .msg-bubble {
-            background: var(--ai-bubble); border: 1px solid var(--border);
-            border-radius: 0 var(--radius) var(--radius) var(--radius);
-            padding: 12px 16px; font-size: 14px; line-height: 1.6; color: var(--text);
-            word-wrap: break-word; word-break: break-word; max-width: 85%; width: fit-content;
-        }
-        .message-group.user .msg-bubble {
-            background: var(--user-bubble); border-color: var(--user-bubble-border);
-            border-radius: var(--radius) 0 var(--radius) var(--radius); align-self: flex-end;
+        .send-message-btn:not(:disabled) {
+            color: var(--accent-green);
         }
 
-        /* Markdown Rendering Tweaks inside Bubble */
-        .msg-bubble p { margin-bottom: 8px; }
-        .msg-bubble p:last-child { margin-bottom: 0; }
-        .msg-bubble ul, .msg-bubble ol { margin-left: 20px; margin-bottom: 8px; }
-        .msg-bubble code { background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 4px; font-size: 12.5px; font-family: monospace; }
-        body.light-theme .msg-bubble code { background: rgba(0,0,0,0.06); color: #c7254e; }
-        .msg-bubble pre { background: #1e1e24; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 10px 0; border: 1px solid rgba(255,255,255,0.05); }
-        .msg-bubble pre code { background: transparent; padding: 0; color: #fff; }
-
-        /* Response Actions Row */
-        .msg-actions { display: flex; gap: 6px; margin-top: 6px; opacity: 0; transition: opacity 0.15s; }
-        .message-group:hover .msg-actions { opacity: 1; }
-        .message-group.user .msg-actions { justify-content: flex-end; }
-        .msg-action-btn {
-            padding: 3px 6px; border-radius: 4px; background: transparent; border: 1px solid var(--border);
-            color: var(--text-muted); font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: var(--font);
+        .send-message-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.4;
         }
-        .msg-action-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-hover); }
 
-        /* Loading Skeletons */
-        .skeleton-wave { display: flex; flex-direction: column; gap: 8px; width: 100%; padding: 4px 0; }
-        .skeleton-line { height: 12px; background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%); background-size: 200% 100%; animation: loading-wave 1.5s infinite; border-radius: 4px; }
-        .skeleton-line.w-80 { width: 80%; } .skeleton-line.w-60 { width: 60%; } .skeleton-line.w-90 { width: 90%; }
-        @keyframes loading-wave { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-
-        /* Blinking Cursor for Streaming Response */
-        .streaming-cursor::after { content: '▋'; animation: blink 0.6s infinite; color: var(--accent); font-size: 12px; margin-left: 2px; }
-        @keyframes blink { 50% { opacity: 0; } }
-
-        /* Advanced Input Area with Control buttons */
-        .input-zone { padding: 0 20px 20px; flex-shrink: 0; background: var(--bg); position: relative; }
-        .input-box {
-            background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-            padding: 12px 14px 8px; transition: border-color 0.2s, box-shadow 0.2s; max-width: 800px; margin: 0 auto;
-        }
-        .input-box:focus-within { border-color: rgba(79,142,247,0.4); box-shadow: 0 0 12px var(--accent-dim); }
-        .input-row { display: flex; align-items: flex-end; gap: 10px; }
-        
-        #userInput {
-            flex: 1; background: transparent; border: none; outline: none; color: var(--text);
-            font-family: var(--font); font-size: 14px; line-height: 1.5; resize: none;
-            min-height: 24px; max-height: 140px; overflow-y: auto; padding: 2px 0;
-        }
-        #userInput::placeholder { color: var(--text-dim); }
-
-        .input-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
-        .quick-chips { display: flex; gap: 6px; overflow-x: auto; }
-        .quick-chips::-webkit-scrollbar { display: none; }
-        .quick-chip {
-            padding: 4px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 20px;
-            font-size: 11.5px; color: var(--text-muted); cursor: pointer; font-family: var(--font); white-space: nowrap; transition: 0.15s;
-        }
-        .quick-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-
-        .input-controls { display: flex; align-items: center; gap: 8px; }
-        .send-btn, .stop-btn {
-            width: 34px; height: 34px; border-radius: 10px; background: var(--accent);
-            border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s;
-        }
-        .send-btn:hover { background: #3d7de8; transform: scale(1.02); }
-        .send-btn:disabled { background: var(--surface-2); color: var(--text-dim); cursor: not-allowed; transform: none; }
-        .stop-btn { background: #ef4444; display: none; }
-        .stop-btn:hover { background: #dc2626; }
-        .input-hint { font-size: 11px; color: var(--text-dim); }
-
-        /* Modern Global Modals */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-            display: none; align-items: center; justify-content: center; z-index: 500; padding: 16px;
-        }
-        .modal-overlay.show { display: flex; }
-        .modal-box {
-            background: var(--surface); border: 1px solid var(--border); width: 100%; max-width: 460px;
-            border-radius: var(--radius); padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            animation: modalSlide 0.2s ease;
-        }
-        @keyframes modalSlide { from{transform:scale(0.95); opacity:0} to{transform:scale(1); opacity:1} }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .modal-title { font-size: 16px; font-weight: 700; }
-        .modal-close { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; }
-        
-        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
-        .setting-row:last-child { border-bottom: none; }
-        .setting-label { font-size: 13.5px; font-weight: 500; }
-        .setting-desc { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
-        
-        select, .btn-primary, .btn-danger {
-            font-family: var(--font); font-size: 13px; padding: 6px 12px; border-radius: 6px; outline: none; cursor: pointer;
-        }
-        select { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); }
-        .btn-primary { background: var(--accent); border: none; color: white; font-weight: 600; }
-        .btn-primary:hover { background: #3d7de8; }
-        .btn-danger { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; font-weight: 600; }
-        .btn-danger:hover { background: rgba(239,68,68,0.25); }
-
-        /* Responsive Mobile Layout rules */
+        /* Responsive on mobile screens */
         @media (max-width: 768px) {
-            .sidebar {
-                position: absolute; left: 0; top: 0; bottom: 0;
-                transform: translateX(-100%); width: 280px;
-            }
-            .sidebar.mobile-open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.4); }
-            .menu-toggle { display: flex; }
-            .suggestion-grid { grid-template-columns: 1fr; }
-            .msg-bubble { max-width: 90%; }
-            .sidebar-overlay {
-                position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 90;
-            }
-            .sidebar-overlay.show { display: block; }
+            .chat-row { padding: 20px 5%; }
+            .input-container-wrapper { padding: 10px 5% 20px 5%; }
         }
-        /* --- TOGGLE BUTTON STYLE --- */
-.sidebar-toggle-btn {
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 1000;
-    background: #202123;
-    color: #fff;
-    border: 1px solid #4d4d4f;
-    border-radius: 6px;
-    padding: 10px 14px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.sidebar-toggle-btn:hover {
-    background: #353740;
-}
-
-/* --- OVERLAY FOR MOBILE --- */
-.sidebar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 998;
-    display: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-/* --- NEW SIDEBAR STYLE (DYNAMIC) --- */
-.sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 260px;
-    height: 100vh;
-    background-color: #202123;
-    color: #fff;
-    z-index: 999;
-    transform: translateX(-100%); /* Inajificha by default */
-    transition: transform 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 4px 0 15px rgba(0,0,0,0.3);
-}
-
-/* Hii itaitwa na JS kufungua sidebar */
-.sidebar.open {
-    transform: translateX(0);
-}
-
-.sidebar.open + .sidebar-overlay {
-    display: block;
-    opacity: 1;
-}
-
-/* --- ADJUST MAIN CHAT CONTAINER --- */
-/* Ili chumba cha chat kisibane kitufe cha juu kushoto, tunaongeza padding juu au pembeni */
-.main-container {
-    margin-left: 0; /* Haitegemei tena static sidebar */
-    width: 100%;
-    min-height: 100vh;
-    padding-top: 60px; /* Nafasi ya kitufe cha juu */
-    transition: all 0.3s ease;
-}
-
-/* Vitufe vya ndani ya Sidebar Header */
-.sidebar-header {
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.new-chat-btn {
-    flex: 1;
-    background: transparent;
-    color: #fff;
-    border: 1px solid #4d4d4f;
-    border-radius: 5px;
-    padding: 12px;
-    text-align: left;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background 0.2s;
-}
-
-.new-chat-btn:hover {
-    background: #2a2b32;
-}
-
-.close-sidebar-btn {
-    background: transparent;
-    color: #8e8ea0;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-    padding: 5px 10px;
-}
-
-/* Footer & Account Information Layout */
-.sidebar-footer {
-    border-top: 1px solid #4d4d4f;
-    padding: 15px;
-    background: #171719;
-}
-
-.user-account-box {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 15px;
-}
-
-.user-avatar i {
-    font-size: 32px;
-    color: #10a37f;
-}
-
-.user-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.username-text {
-    font-weight: bold;
-    font-size: 14px;
-    color: #ececf1;
-}
-
-.user-status {
-    font-size: 11px;
-    color: #10a37f;
-}
-
-.footer-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.footer-action-btn {
-    background: transparent;
-    border: none;
-    color: #ececf1;
-    text-align: left;
-    padding: 8px 10px;
-    font-size: 13px;
-    cursor: pointer;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
-}
-
-.footer-action-btn:hover {
-    background: #2a2b32;
-}
-
-.text-danger {
-    color: #ff4d4d !important;
-}
     </style>
 </head>
 <body>
 
-<!-- Kitufe cha Juu Kushoto cha Kufungua/Kufunga Sidebar -->
-<button id="sidebarToggle" class="sidebar-toggle-btn" onclick="toggleSidebar()">
-    <i class="fas fa-bars"></i>
-</button>
+    <!-- Kitufe cha Hamburger Juu Kushoto -->
+    <button id="sidebarToggle" class="sidebar-toggle-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
 
-<!-- Kizibo cha nyuma (Overlay) kikionekana kwenye simu -->
-<div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <!-- Sidebar Overlay Shadow -->
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-<!-- Sidebar iliyoboreshwa -->
-<aside id="sidebar" class="sidebar">
-    <div class="sidebar-header">
-        <button class="new-chat-btn" onclick="createNewConversationFromUI()">
-            <i class="fas fa-plus"></i> Soga Mpya
-        </button>
-        <!-- Kitufe cha kufunga kikiwa ndani ya sidebar (kwa ajili ya simu) -->
-        <button class="close-sidebar-btn" onclick="toggleSidebar()">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-
-    <!-- Sehemu ya Orodha ya Maongezi ya Nyuma -->
-    <div class="conversations-wrapper" id="conversationsContainer">
-        <div class="sidebar-section-title">Historia ya Soga</div>
-        <div id="conversationsList">
-            <!-- Mazungumzo yatajazwa hapa na JS -->
-        </div>
-    </div>
-
-    <!-- Sehemu ya Chini: Akaunti na Features Zingine -->
-    <div class="sidebar-footer">
-        <div class="user-account-box">
-            <div class="user-avatar">
-                <i class="fas fa-user-circle"></i>
-            </div>
-            <div class="user-info">
-                <span class="username-text">{{ username }}</span>
-                <span class="user-status">Akaunti Amilifu</span>
-            </div>
-        </div>
-        
-        <div class="footer-actions">
-            <button class="footer-action-btn text-danger" onclick="clearAllConversationsFromUI()">
-                <i class="fas fa-trash-alt"></i> Futa Soga Zote
+    <!-- Collapsible Sidebar Content Area -->
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <button class="new-chat-btn" onclick="createNewConversationFromUI()">
+                <i class="fas fa-plus"></i> Soga Mpya
             </button>
-            <a href="/logout" class="footer-action-btn logout-link">
-                <i class="fas fa-sign-out-alt"></i> Ondoka (Logout)
-            </a>
-        </div>
-    </div>
-</aside>
-
-<!-- Main Interface Workspace -->
-<main class="main">
-    <!-- Header Topbar Component -->
-    <div class="topbar">
-        <button class="menu-toggle" onclick="toggleMobileSidebar()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
-        <div class="model-badge">
-            <div class="model-dot"></div>
-            Maisha AI v2.0 (Groq Fast Engine)
-        </div>
-        <div class="topbar-right">
-            <button class="icon-btn" title="Badili Muonekano (Theme)" onclick="toggleThemeSystem()">
-                <svg id="themeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            </button>
-            <button class="icon-btn" title="Mipangilio" onclick="openModal('settingsModal')">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <button class="close-sidebar-btn" onclick="toggleSidebar()">
+                <i class="fas fa-times"></i>
             </button>
         </div>
-    </div>
 
-    <!-- Active Scrolling Chat Workspace -->
-    <div class="chat-area" id="chatArea">
-        <div class="chat-container" id="chatContainer">
-            <!-- Welcome Screen Dashboard -->
-            <div class="welcome-screen" id="welcomeScreen">
-                <div class="welcome-icon">🧠</div>
-                <h1 class="welcome-title">Karibu kwenye <span>Maisha AI</span></h1>
-                <p class="welcome-sub">Mshauri wako wa busara na mkakati halisi. Chagua mada au andika changamoto yako hapa chini tuanze kazi.</p>
-                
-                <div class="suggestion-grid">
-                    <div class="suggestion-card" onclick="triggerSuggestion('Natafuta wazo la biashara la kuanza nikiwa na mtaji wa TZS 50,000. Nipe mchanganuo wake.')">
-                        <div class="icon">💰</div>
-                        <div>
-                            <div class="label">Biashara ndogo</div>
-                            <div class="hint">Wazo la mtaji wa 50k na namna ya kulikuza haraka.</div>
-                        </div>
-                    </div>
-                    <div class="suggestion-card" onclick="triggerSuggestion('Nisadie kutengeneza ratiba nzuri ya masomo inayoweza kunifanya nifaulu vizuri mitihani yangu ya mwisho.')">
-                        <div class="icon">📚</div>
-                        <div>
-                            <div class="label">Ratiba ya Masomo</div>
-                            <div class="hint">Mbinu za kupanga muda na kufaulu vizuri kitaaluma.</div>
-                        </div>
-                    </div>
+        <div class="conversations-wrapper" id="conversationsContainer">
+            <div class="sidebar-section-title">Historia ya Soga</div>
+            <div id="conversationsList">
+                <!-- Data zitajazwa kiotomatiki hapa kutoka DB -->
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-account-box">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="user-info">
+                    <!-- Hapa linaandikwa jina kamili la mtu aliyesajili akaunti -->
+                    <span class="username-text" id="currentUserBox">{{ username }}</span>
+                    <span class="user-status">Akaunti Amilifu</span>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Advanced Input Component Control Zone -->
-    <div class="input-zone">
-        <div class="input-box">
-            <div class="input-row">
-                <textarea id="userInput" rows="1" placeholder="Andika ujumbe au swali lako hapa..." onKeyDown="handleInputKeys(event)"></textarea>
-                <div class="input-controls">
-                    <button class="stop-btn" id="stopBtn" title="Sitisha kuandika" onclick="abortStreamingConnection()">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
-                    </button>
-                    <button class="send-btn" id="sendBtn" title="Tuma ujumbe" onclick="dispatchUserMessage()" disabled>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                    </button>
-                </div>
-            </div>
-            <div class="input-footer">
-                <div class="quick-chips">
-                    <button class="quick-chip" onclick="triggerSuggestion('Nipe ushauri jinsi ya kuboresha mahusiano yangu.')">💞 Mahusiano</button>
-                    <button class="quick-chip" onclick="triggerSuggestion('Jinsi ya kujenga nidhamu ya kudumu ya kufanya kazi bila kukata tamaa.')">🔥 Hamasa & Nidhamu</button>
-                </div>
-                <span class="input-hint">Sht + Enter kwa mstari mpya. Enter kutuma</span>
-            </div>
-        </div>
-    </div>
-</main>
-
-<!-- Settings Modal Frame -->
-<div class="modal-overlay" id="settingsModal">
-    <div class="modal-box">
-        <div class="modal-header">
-            <div class="modal-title">Mipangilio ya Mfumo (Settings)</div>
-            <button class="modal-close" onclick="closeModal('settingsModal')">&times;</button>
-        </div>
-        <div class="setting-row">
-            <div>
-                <div class="setting-label">Muonekano</div>
-                <div class="setting-desc">Chagua muundo wa giza au mwanga.</div>
-            </div>
-            <select id="themeSelect" onchange="adjustThemeViaSelect(this.value)">
-                <option value="dark">Giza (Dark)</option>
-                <option value="light">Mwanga (Light)</option>
-            </select>
-        </div>
-        <div class="setting-row">
-            <div>
-                <div class="setting-label">Futa Data Zote</div>
-                <div class="setting-desc">Hii itafuta historia yote kabisa kwenye database.</div>
-            </div>
-            <button class="btn-danger" onclick="wipeAllConversations()">Futa Zote</button>
-        </div>
-    </div>
-</div>
-
-<!-- Implementation Logic: Javascript Clean Architecture Core Layer -->
-<script>
-    
-    // State Architecture Management
-    let state = {
-        conversations: [],
-        activeConversationId: null,
-        isGenerating: false,
-        theme: 'dark',
-        lastUserPrompt: ''
-    };
-
-    let activeAbortController = null;
-
-    // DOM Engine Bootstrapper
-    document.addEventListener("DOMContentLoaded", () => {
-        initializeApplicationState();
-        setupDropdownCloser();
-    });
-
-  function initializeApplicationState() {
-        // Load initial state configurations from database via API
-        fetchConversationsFromDatabase();
-        
-        // Input text verification listener & Dynamic Resizing
-        const userInput = document.getElementById('userInput');
-        const sendBtn = document.getElementById('sendBtn');
-        
-        userInput.addEventListener('input', () => {
-            // Washa kitufe kama kuna maandishi, zima kama kiko wazi
-            sendBtn.disabled = userInput.value.trim() === '' || state.isGenerating;
             
-            // Rekebisha urefu wa textarea hapa hapa kiotomatiki
-            userInput.style.height = 'auto';
-            userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
+            <div class="footer-actions">
+                <button class="footer-action-btn text-danger" onclick="clearAllConversationsFromUI()">
+                    <i class="fas fa-trash-alt"></i> Futa Soga Zote
+                </button>
+                <a href="/logout" class="footer-action-btn logout-link">
+                    <i class="fas fa-sign-out-alt"></i> Ondoka (Logout)
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Chat Content Section Container -->
+    <main class="main-container">
+        <div class="chat-window" id="chatWindow">
+            <!-- Screen ya kwanza kabisa kabla mtu hajaandika -->
+            <div class="welcome-container" id="welcomeBox">
+                <i class="fas fa-comments" style="font-size: 54px; color: var(--accent-green); margin-bottom:20px; display:block;"></i>
+                <h3>Mambo vipi, {{ username }}! Naitwa Maisha AI.</h3>
+                <p style="color: var(--text-muted); margin-top: 10px; font-size:14px;">
+                    Nikupe ushauri gani leo? Tunaweza kuongea kuhusu masomo, CV, kutafuta pesa au mambo ya mahusiano bila hukumu yoyote!
+                </p>
+            </div>
+        </div>
+
+        <!-- Input Section Container Area -->
+        <div class="input-container-wrapper">
+            <div class="input-bar-box">
+                <textarea id="userInput" rows="1" placeholder="Andika ujumbe wako hapa..." onkeydown="handleInputKeys(event)"></textarea>
+                <button id="sendBtn" class="send-message-btn" onclick="dispatchUserMessage()" disabled>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- --- JAVASCRIPT LOGIC MOTOR ENGINE --- -->
+    <script>
+        // Mfumo wa kuhifadhi Hali ya sasa ya Programu
+        const state = {
+            currentConversationId: null,
+            isGenerating: false
+        };
+
+        // App Initialization Trigger
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchConversationsFromDatabase();
+            
+            // Kusikiliza mabadiliko ya maandishi kwenye Textarea ili kuwasha kitufe
+            const userInput = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            userInput.addEventListener('input', () => {
+                sendBtn.disabled = userInput.value.trim() === '' || state.isGenerating;
+                
+                // Kunyoosha textbox kwenda juu kulingana na urefu wa ujumbe
+                userInput.style.height = 'auto';
+                userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
+            });
+
+            // Sanidi marked.js kwa ajili ya Markdown styling
+            marked.setOptions({ breaks: true });
         });
 
-        // Setup markdown settings options
-        marked.setOptions({
-            breaks: true,
-            highlight: function(code, lang) {
-                if (Prism.languages[lang]) {
-                    return Prism.highlight(code, Prism.languages[lang], lang);
-                }
-                return code;
+        // Kufungua au Kufunga Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+            } else {
+                sidebar.classList.add('open');
             }
-        });
-    }
-
-    // Modern Real Database Handlers via Clean Fetch API Architecture
-    async function fetchConversationsFromDatabase() {
-        renderHistorySkeletons();
-        try {
-            const response = await fetch('/api/conversations');
-            if (!response.ok) throw new Error('Network failure');
-            state.conversations = await response.json();
-            renderSidebarHistory();
-        } catch (error) {
-            console.error("Failed to fetch historical session paths:", error);
-            // Fallback to locally tracked dynamic empty array state safely
-            state.conversations = [];
-            renderSidebarHistory();
-        }
-    }
-
-    function renderHistorySkeletons() {
-        const list = document.getElementById('historyList');
-        list.innerHTML = Array(3).fill(0).map(() => `
-            <div class="skeleton-wave" style="padding:10px 8px;">
-                <div class="skeleton-line w-90"></div>
-            </div>
-        `).join('');
-    }
-
-    function renderSidebarHistory() {
-        const list = document.getElementById('historyList');
-        if (state.conversations.length === 0) {
-            list.innerHTML = `<div style="padding:12px;font-size:12px;color:var(--text-dim);text-align:center;">Huna historia yoyote kwa sasa.</div>`;
-            return;
         }
 
-        list.innerHTML = state.conversations.map(chat => `
-            <div class="history-item ${chat.id === state.activeConversationId ? 'active' : ''}" id="chat-item-${chat.id}" onclick="switchActiveConversation('${chat.id}')">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                <div class="history-title" id="title-text-${chat.id}">${escapeHtml(chat.title || 'Mazungumzo Mapya')}</div>
-                <div class="history-ops" onclick="event.stopPropagation();">
-                    <button class="op-btn" title="Badili jina" onclick="initiateRenameSession('${chat.id}')">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                    </button>
-                    <button class="op-btn" title="Futa" onclick="executeDeleteConversation('${chat.id}')">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    }
+        // Kupakia historia yote ya soga kutoka kwenye DB
+        function fetchConversationsFromDatabase() {
+            fetch('/api/conversations')
+                .then(res => res.json())
+                .then(data => {
+                    const list = document.getElementById('conversationsList');
+                    list.innerHTML = '';
+                    
+                    if(data.length === 0) {
+                        list.innerHTML = `<div style="color:var(--text-muted); font-size:12px; padding:10px;">Huna soga yoyote mzee</div>`;
+                        return;
+                    }
 
-    // Conversation Engine Logic
-    async function switchActiveConversation(id) {
-        if(state.isGenerating) return;
-        state.activeConversationId = id;
-        renderSidebarHistory();
-        document.getElementById('welcomeScreen').style.display = 'none';
-        
-        // Clean target container and inject initial render structural frames
-        const container = document.getElementById('chatContainer');
-        container.innerHTML = `
-            <div class="skeleton-wave" style="margin-top:24px;">
-                <div class="skeleton-line w-80"></div>
-                <div class="skeleton-line w-90"></div>
-                <div class="skeleton-line w-60"></div>
-            </div>
-        `;
-
-        try {
-            const res = await fetch(`/api/conversations/${id}`);
-            const data = await res.json();
-            container.innerHTML = '';
-            data.messages.forEach(msg => appendMessageDOM(msg.text, msg.sender, false));
-            scrollToWorkspaceBottom();
-        } catch(err) {
-            container.innerHTML = `<div style="color:#ef4444;font-size:13px;text-align:center;padding:24px;">Imefeli kupakia ujumbe. Tafadhali jaribu tena.</div>`;
+                    data.forEach(conv => {
+                        const activeClass = state.currentConversationId == conv.id ? 'active' : '';
+                        const div = document.createElement('div');
+                        div.className = `conv-item ${activeClass}`;
+                        div.setAttribute('id', `conv-${conv.id}`);
+                        div.onclick = () => selectConversation(conv.id);
+                        
+                        div.innerHTML = `
+                            <div class="conv-title-box">
+                                <i class="far fa-comment-alt"></i>
+                                <span>${conv.title}</span>
+                            </div>
+                            <div class="conv-actions">
+                                <i class="fas fa-trash-alt" onclick="deleteConversationEvent(event, ${conv.id})"></i>
+                            </div>
+                        `;
+                        list.appendChild(div);
+                    });
+                })
+                .catch(err => console.error("Error fetching conversations:", err));
         }
-    }
 
-    function startNewChat() {
-        if(state.isGenerating) return;
-        state.activeConversationId = null;
-        renderSidebarHistory();
-        document.getElementById('chatContainer').innerHTML = '';
-        document.getElementById('chatContainer').appendChild(document.getElementById('welcomeScreen'));
-        document.getElementById('welcomeScreen').style.display = 'flex';
-        const input = document.getElementById('userInput');
-        input.value = '';
-        input.style.height = 'auto';
-    }
+        // Kuchagua soga fulani na kuipakia kwenye kioo cha chat
+        function selectConversation(convId) {
+            state.currentConversationId = convId;
+            
+            // Weka alama ya active kwenye sidebar item
+            document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
+            const selectedEl = document.getElementById(`conv-${convId}`);
+            if(selectedEl) selectedEl.classList.add('active');
 
-    // Message dispatching stream flow architectures
-    async function dispatchUserMessage(customText = null) {
-        const text = customText || document.getElementById('userInput').value.trim();
-        if(!text || state.isGenerating) return;
+            // Funga sidebar kama yupo kwenye simu
+            if (window.innerWidth < 768) toggleSidebar();
 
-        state.lastUserPrompt = text; // Safe capture state tracking value
+            fetch(`/api/conversations/${convId}`)
+                .then(res => res.json())
+                .then(data => {
+                    const chatWindow = document.getElementById('chatWindow');
+                    chatWindow.innerHTML = ''; // Safisha skrini
+                    
+                    if (data.messages.length === 0) {
+                        chatWindow.innerHTML = `
+                            <div class="welcome-container">
+                                <i class="fas fa-comments" style="font-size: 48px; color: var(--accent-green); margin-bottom:15px;"></i>
+                                <h3>Soga ipo wazi!</h3>
+                                <p style="color:var(--text-muted);">Andika chochote uanze kuongea na Maisha AI.</p>
+                            </div>`;
+                        return;
+                    }
 
-        // Close initial greeting dashboard visibility frame
-        document.getElementById('welcomeScreen').style.display = 'none';
+                    data.messages.forEach(msg => {
+                        renderMessageRow(msg.sender, msg.text);
+                    });
+                    
+                    scrollToBottom();
+                });
+        }
 
-        if(!customText) {
+        // Kutengeneza Soga Mpya (ChatGPT Style bila kurefresh)
+        function createNewConversationFromUI() {
+            state.isGenerating = false;
             document.getElementById('userInput').value = '';
             document.getElementById('userInput').style.height = 'auto';
             document.getElementById('sendBtn').disabled = true;
-        }
 
-        // Output user bubble into framework workspace
-        appendMessageDOM(text, 'user');
-        scrollToWorkspaceBottom();
-
-        // Check or produce new active database session parameters
-        if (!state.activeConversationId) {
-            await createNewSessionOnDatabase(text);
-        }
-
-        // Establish streaming context structure parameters
-        toggleGenerationState(true);
-        const aiMessageId = appendMessageDOM('', 'ai', true);
-
-        activeAbortController = new AbortController();
-
-        try {
-            const response = await fetch('/api/chat/stream', {
+            fetch('/api/conversations/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text, conversation_id: state.activeConversationId }),
-                signal: activeAbortController.signal
-            });
-
-            if (!response.ok) throw new Error("Stream connection failed.");
-
-            // Standard real streaming reader construction parameters
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let aiResponseBuffer = '';
-            const targetBubble = document.getElementById(`bubble-${aiMessageId}`);
-
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
+                body: JSON.stringify({ title: 'Mazungumzo Mapya' })
+            })
+            .then(res => res.json())
+            .then(newConv => {
+                state.currentConversationId = newConv.id;
                 
-                const chunk = decoder.decode(value, { stream: true });
-                aiResponseBuffer += chunk;
+                // Safisha kioo kiwe tayari
+                document.getElementById('chatWindow').innerHTML = `
+                    <div class="welcome-container">
+                        <i class="fas fa-comments" style="font-size: 54px; color: var(--accent-green); margin-bottom:20px; display:block;"></i>
+                        <h3>Mambo vipi tena! Tuanzishe soga mpya.</h3>
+                        <p style="color: var(--text-muted); font-size:14px;">Nishushe nondo gani sasa hivi?</p>
+                    </div>`;
                 
-                // Real-time marked parsing injection parameters seamlessly
-                targetBubble.innerHTML = marked.parse(aiResponseBuffer);
-                Prism.highlightAllUnder(targetBubble);
-                scrollToWorkspaceBottom();
-            }
-
-            // Finalize stream message structure layout
-            finalizeAiBubbleOutput(aiMessageId, aiResponseBuffer);
-
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                document.getElementById(`bubble-${aiMessageId}`).insertAdjacentHTML('beforeend', ' <em style="color:var(--text-muted);font-size:12px;">(Imesitishwa)</em>');
-            } else {
-                document.getElementById(`bubble-${aiMessageId}`).innerHTML = '<span style="color:#ef4444;">Kuna tatizo la mtandao limetokea. Tafadhali bonyeza "Rudia upya".</span>';
-            }
-        } finally {
-            toggleGenerationState(false);
-            activeAbortController = null;
-        }
-    }
-
-    async function createNewSessionOnDatabase(firstPrompt) {
-        try {
-            const res = await fetch('/api/conversations/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: firstPrompt.substring(0, 26) + '...' })
+                fetchConversationsFromDatabase();
+                if (window.innerWidth < 768) toggleSidebar();
+                document.getElementById('userInput').focus();
             });
-            const data = await res.json();
-            state.activeConversationId = data.id;
-            // Push safely into current active context array structure parameters
-            state.conversations.unshift(data);
-            renderSidebarHistory();
-        } catch (e) {
-            console.error("Session registration tracking faulted structural frameworks:", e);
-            state.activeConversationId = 'temp-' + Date.now(); // Graceful UI isolation protection logic standard path
         }
-    }
 
-    function finalizeAiBubbleOutput(id, finalRawText) {
-        const bubble = document.getElementById(`bubble-${id}`);
-        bubble.classList.remove('streaming-cursor');
-        
-        // Dynamic construction setup tracking row actions injectors injection logic standard path
-        const actionsRow = document.getElementById(`actions-${id}`);
-        actionsRow.innerHTML = `
-            <button class="msg-action-btn" onclick="copyTextToClipboard(this, \`${escapeJsString(finalRawText)}\`)">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Nakili
-            </button>
-            <button class="msg-action-btn" onclick="regenerateLastAiResponse()">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Rudia
-            </button>
-        `;
-    }
-
-    // DOM Injectors Core Architectural Modules
-    function appendMessageDOM(text, sender, isStreamingPlaceholder = false) {
-        const isUser = sender === 'user';
-        const msgId = 'msg-' + Date.now() + Math.floor(Math.random() * 100);
-        const container = document.getElementById('chatContainer');
-
-        const group = document.createElement('div');
-        group.className = `message-group ${isUser ? 'user' : 'ai'}`;
-        group.id = msgId;
-
-        // Process initial inner marked structure if text parsing elements required instantly
-        const processedContent = isUser ? escapeHtml(text) : marked.parse(text);
-
-        group.innerHTML = `
-            <div class="msg-avatar ${isUser ? 'user' : 'ai'}">${isUser ? 'W' : '🧠'}</div>
-            <div class="msg-content">
-                <div class="msg-sender">
-                    ${isUser ? 'Wewe' : 'Maisha AI'}
-                </div>
-                <div class="msg-bubble ${isUser ? 'user' : 'ai'} ${isStreamingPlaceholder ? 'streaming-cursor' : ''}" id="bubble-${msgId}">
-                    ${processedContent}
-                </div>
-                <div class="msg-actions" id="actions-${msgId}">
-                    ${isUser ? `
-                        <button class="msg-action-btn" onclick="initiateEditUserPrompt('${msgId}')">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Hariri
-                        </button>
-                    ` : !isStreamingPlaceholder ? `
-                        <button class="msg-action-btn" onclick="copyTextToClipboard(this, \`${escapeJsString(text)}\`)">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Nakili
-                        </button>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-
-        container.appendChild(group);
-        if(!isUser && !isStreamingPlaceholder) Prism.highlightAllUnder(group);
-        return msgId;
-    }
-
-    // Interactive Action Capabilities Engine
-    function abortStreamingConnection() {
-        if (activeAbortController) {
-            activeAbortController.abort();
+        // Kusimamia vitufe vya Enter kuandika ujumbe
+        function handleInputKeys(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Zuia kushuka mstari mpya
+                if (!state.isGenerating && document.getElementById('userInput').value.trim() !== '') {
+                    dispatchUserMessage();
+                }
+            }
         }
-    }
 
-    function regenerateLastAiResponse() {
-        if(state.lastUserPrompt) {
-            dispatchUserMessage(state.lastUserPrompt);
-        }
-    }
+        // KUTUMA UJUMBE NA KU-STREAM MAJIBU YA GROQ NENO KWA NENO
+        async function dispatchUserMessage() {
+            const userInput = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const messageText = userInput.value.trim();
 
-    function initiateEditUserPrompt(msgId) {
-        const bubble = document.getElementById(`bubble-${msgId}`);
-        const currentText = bubble.textContent.trim();
-        document.getElementById('userInput').value = currentText;
-        document.getElementById('userInput').focus();
-        autoResizeInput(document.getElementById('userInput'));
-        document.getElementById('sendBtn').disabled = false;
-    }
+            if (!messageText || state.isGenerating) return;
 
-    function triggerSuggestion(text) {
-        dispatchUserMessage(text);
-    }
-
-    // Session Mutations Handlers
-    function initiateRenameSession(id) {
-        const titleDiv = document.getElementById(`title-text-${id}`);
-        const currentText = titleDiv.textContent;
-        const input = document.createElement('input');
-        input.value = currentText;
-        
-        titleDiv.replaceWith(input);
-        input.focus();
-        input.select();
-
-        const finishRename = async () => {
-            const newTitle = input.value.trim() || currentText;
-            const updatedDiv = document.createElement('div');
-            updatedDiv.className = 'history-title';
-            updatedDiv.id = `title-text-${id}`;
-            updatedDiv.textContent = newTitle;
-            input.replaceWith(updatedDiv);
-
-            try {
-                await fetch(`/api/conversations/rename`, {
+            // 1. Kama hakuna soga iliyofunguliwa sasa hivi, itengeneze kwanza yenyewe kiotomatiki
+            if (!state.currentConversationId) {
+                await fetch('/api/conversations/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: id, title: newTitle })
+                    body: JSON.stringify({ title: messageText.substring(0, 25) + '...' })
+                })
+                .then(res => res.json())
+                .then(newConv => {
+                    state.currentConversationId = newConv.id;
                 });
-                const item = state.conversations.find(c => c.id === id);
-                if(item) item.title = newTitle;
-            } catch(e) { console.error("Rename operational database paths failed:", e); }
-        };
+            }
 
-        input.addEventListener('keydown', (e) => { if(e.key === 'Enter') finishRename(); });
-        input.addEventListener('blur', finishRename);
-    }
+            // Washa ulinzi wa maongezi (Lock states)
+            state.isGenerating = true;
+            sendBtn.disabled = true;
 
-    async function executeDeleteConversation(id) {
-        if(!confirm("Je, una uhakika unataka kufuta mazungumzo haya?")) return;
-        try {
-            await fetch(`/api/conversations/delete/${id}`, { method: 'DELETE' });
-            state.conversations = state.conversations.filter(c => c.id !== id);
-            if(state.activeConversationId === id) startNewChat();
-            else renderSidebarHistory();
-        } catch(e) { console.error("Could not delete track session safely:", e); }
-    }
+            // Safisha eneo la karibu na uondoe Welcome box kama lipo
+            const welcomeBox = document.getElementById('welcomeBox');
+            if(welcomeBox) welcomeBox.remove();
 
-    async function wipeAllConversations() {
-        if(!confirm("UPO TAYARI? Hii itafuta historia yote kabisa na hutaweza kuirejesha.")) return;
-        try {
-            await fetch('/api/conversations/clear_all', { method: 'POST' });
-            state.conversations = [];
-            closeModal('settingsModal');
-            startNewChat();
-        } catch(e) { console.error(e); }
-    }
+            // 2. Render ujumbe wa user kwenye Screen mara moja
+            renderMessageRow('user', messageText);
+            userInput.value = '';
+            userInput.style.height = 'auto';
+            scrollToBottom();
 
-    // Search and Filtering Architecture Modules
-    function filterHistory() {
-        const query = document.getElementById('searchHistory').value.toLowerCase();
-        const items = document.querySelectorAll('.history-item');
-        items.forEach(item => {
-            const text = item.querySelector('.history-title').textContent.toLowerCase();
-            item.style.display = text.includes(query) ? 'flex' : 'none';
-        });
-    }
+            // 3. Andaa kitalu (Row) maalum kitakachopokea majibu ya AI yanayokuja kwa mtiririko
+            const aiRowId = 'ai-stream-' + Date.now();
+            renderMessageRow('ai', '', aiRowId);
+            const aiContentContainer = document.querySelector(`#${aiRowId} .message-content`);
 
-    // Export System Feature Engine
-    function exportChatText() {
-        const bubbles = document.querySelectorAll('.msg-bubble');
-        if(bubbles.length === 0) { alert("Hakuna ujumbe wa kupakua."); return; }
-        
-        let dumpText = "=== MAISHA AI CHAT EXPORT LOG ===\n\n";
-        document.querySelectorAll('.message-group').forEach(grp => {
-            const sender = grp.classList.contains('user') ? "WEWE" : "MAISHA AI";
-            const body = grp.querySelector('.msg-bubble').textContent.trim();
-            dumpText += `[${sender}]:\n${body}\n\n-----------------------------\n\n`;
-        });
+            try {
+                // Piga simu ya HTTP Stream kwenda Flask Engine yetu mpya
+                const response = await fetch('/api/chat/stream', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: messageText,
+                        conversation_id: state.currentConversationId
+                    })
+                });
 
-        const blob = new Blob([dumpText], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Maisha_AI_Chat_Export_${Date.now()}.txt`;
-        document.body.appendChild(a); a.click();
-        document.body.removeChild(a); URL.revokeObjectURL(url);
-    }
+                if (!response.ok) throw new Error("Mawasiliano na seva yamefeli");
 
-    // Application Utilities State & UI Mutators
-    function toggleGenerationState(generating) {
-        state.isGenerating = generating;
-        document.getElementById('sendBtn').style.display = generating ? 'none' : 'flex';
-        document.getElementById('stopBtn').style.display = generating ? 'flex' : 'none';
-        document.getElementById('userInput').disabled = generating;
-        if(!generating) {
-            document.getElementById('userInput').focus();
-            autoResizeInput(document.getElementById('userInput'));
-        }
-    }
+                // Fungua usomaji wa vijisehemu vya text (Tokens reader)
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let accumulatedText = "";
 
-    function toggleThemeSystem() {
-        const target = document.body.classList.contains('light-theme') ? 'dark' : 'light';
-        adjustThemeViaSelect(target);
-    }
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
 
-    function adjustThemeViaSelect(theme) {
-        state.theme = theme;
-        document.getElementById('themeSelect').value = theme;
-        const icon = document.getElementById('themeIcon');
-        
-        if (theme === 'light') {
-            document.body.classList.add('light-theme');
-            icon.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
-        } else {
-            document.body.classList.remove('light-theme');
-            icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
-        }
-    }
+                    // Badilisha byte kuwa neno la kawaida
+                    const chunk = decoder.decode(value, { stream: true });
+                    accumulatedText += chunk;
 
-    function toggleProfileDropdown(e) {
-        e.stopPropagation();
-        document.getElementById('profileDropdown').classList.toggle('show');
-    }
+                    // Geuza maandishi ya sasa kuwa HTML safi ya kuvutia kupitia marked.js
+                    aiContentContainer.innerHTML = marked.parse(accumulatedText);
+                    
+                    // Highlighting code blocks kama vipo
+                    aiContentContainer.querySelectorAll('pre code').forEach((block) => {
+                        Prism.highlightElement(block);
+                    });
 
-    function setupDropdownCloser() {
-        document.addEventListener('click', () => {
-            document.getElementById('profileDropdown').classList.remove('show');
-        });
-    }
+                    scrollToBottom();
+                }
 
-    function openModal(id) { document.getElementById(id).classList.add('show'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-
-    function toggleMobileSidebar() {
-        document.getElementById('sidebar').classList.toggle('mobile-open');
-        document.getElementById('sidebarOverlay').classList.toggle('show');
-    }
-
-    function autoResizeInput(el) {
-        el.style.height = 'auto';
-        el.style.height = Math.min(el.scrollHeight, 140) + 'px';
-    }
-
-   function handleInputKeys(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault(); // Zuia isishuke mstari wa chini
-            const text = document.getElementById('userInput').value.trim();
-            
-            // Tuma ujumbe kama mtumiaji ameandika kitu na AI haipo busy kuandika
-            if (text !== '' && !state.isGenerating) {
-                dispatchUserMessage();
+            } catch (err) {
+                console.error("Streaming error:", err);
+                aiContentContainer.innerHTML = `<span style="color:var(--text-danger);">[Hitilafu]: Mfumo umeshindwa kupokea mawasiliano ya AI. Jaribu tena!</span>`;
+            } finally {
+                // Fungua ulinzi (Unlock parameters)
+                state.isGenerating = false;
+                sendBtn.disabled = userInput.value.trim() === '';
+                fetchConversationsFromDatabase(); // Pakia upya majina ya sidebar kama kichwa cha habari kikibadilika
             }
         }
-    }
 
-    function scrollToWorkspaceBottom() {
-        const area = document.getElementById('chatArea');
-        area.scrollTop = area.scrollHeight;
-    }
+        // Kujenga Mistari ya Maongezi kwenye Screen (HTML Injector)
+        function renderMessageRow(sender, text, optionalId = '') {
+            const chatWindow = document.getElementById('chatWindow');
+            const row = document.createElement('div');
+            row.className = `chat-row ${sender}`;
+            if(optionalId) row.setAttribute('id', optionalId);
 
-    function copyTextToClipboard(btn, text) {
-        navigator.clipboard.writeText(text).then(() => {
-            const previous = btn.innerHTML;
-            btn.textContent = '✓ Imenakiliwa';
-            setTimeout(() => { btn.innerHTML = previous; }, 2000);
-        });
-    }
+            const avatarText = sender === 'user' ? 'U' : 'AI';
+            const parsedContent = text ? marked.parse(text) : '<span class="loading-cursor">...</span>';
 
-    function escapeHtml(string) {
-        return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    function escapeJsString(str) {
-        return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
-    }
-    // Function ya kuwasha na kuzima Sidebar (Slide-in / Slide-out)
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    
-    if (sidebar.classList.contains('open')) {
-        sidebar.classList.remove('open');
-        overlay.style.display = 'none';
-        overlay.style.opacity = '0';
-    } else {
-        sidebar.classList.add('open');
-        overlay.style.display = 'block';
-        setTimeout(() => { overlay.style.opacity = '1'; }, 10);
-    }
-}
-
-// Tukio la kufunga sidebar mtumiaji akichagua soga fulani (kwa screen ndogo)
-function selectConversationFromUI(convId) {
-    // Piga API ya kupakia meseji (Msimbo wako wa zamani wa kubadili chat)
-    loadConversationMessages(convId); 
-    
-    // Kama yuko kwenye simu, funga sidebar kiotomatiki baada ya kuchagua soga
-    if (window.innerWidth < 768) {
-        toggleSidebar();
-    }
-}
-function createNewConversationFromUI() {
-    const userInput = document.getElementById('userInput');
-    const sendBtn = document.getElementById('sendBtn');
-    
-    // 1. Safisha eneo la kuandikia mara moja
-    if (userInput) {
-        userInput.value = '';
-        userInput.style.height = 'auto'; 
-    }
-    
-    // 2. Rudisha ulinzi wa mfumo (Reset State)
-    state.isGenerating = false; 
-    if (sendBtn) {
-        sendBtn.disabled = true; // Kitufe kinajifunga hadi user aandike kitu
-    }
-
-    // 3. Piga simu Flask kutengeneza Soga Mpya kwenye Database bila kurefresh
-    fetch('/api/conversations/create', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ title: 'Mazungumzo Mapya' })
-    })
-    .then(response => response.json())
-    .then(newConv => {
-        // Hifadhi ID ya soga mpya tuliyopewa na PostgreSQL
-        state.currentConversationId = newConv.id;
-        
-        // Safisha screen ya chat iwe safi kabisa
-        const chatWindow = document.getElementById('chatWindow');
-        if (chatWindow) {
-            chatWindow.innerHTML = `
-                <div class="welcome-container" style="text-align:center; margin-top:100px; color:#8e8ea0;">
-                    <i class="fas fa-comments" style="font-size: 48px; color: #10a37f; margin-bottom:15px;"></i>
-                    <h3>Mambo vipi! Naitwa Maisha AI.</h3>
-                    <p>Nikupe ushauri wa nini leo? Tuongee michongo ya biashara, shule au maisha mzee.</p>
-                </div>
+            row.innerHTML = `
+                <div class="avatar-box">${avatarText}</div>
+                <div class="message-content">${parsedContent}</div>
             `;
+            chatWindow.appendChild(row);
+            
+            // Kujaza rangi za codes kama zimo kwenye kumbukumbu
+            if(text) {
+                row.querySelectorAll('pre code').forEach(block => Prism.highlightElement(block));
+            }
         }
-        
-        // Huu msimbo unaitwa ule unaopakia upya majina ya soga kwenye sidebar
-        if (typeof fetchConversationsFromDatabase === 'function') {
-            fetchConversationsFromDatabase();
-        } else if (typeof loadConversations === 'function') {
-            loadConversations(); // Kama ulipa jina hili
+
+        // Kusukuma screen kwenda chini kila neno jipya linapoongezeka
+        function scrollToBottom() {
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
-        
-        // Funga sidebar kama yuko kwenye simu
-        if (window.innerWidth < 768 && typeof toggleSidebar === 'function') {
-            toggleSidebar();
+
+        // Kufuta soga moja mahususi
+        function deleteConversationEvent(e, convId) {
+            e.stopPropagation(); // Zuia isifungue soga wakati wa kufuta
+            if(!confirm("Una uhakika unataka kufuta maongezi haya?")) return;
+
+            fetch(`/api/conversations/delete/${convId}`, { method: 'DELETE' })
+                .then(() => {
+                    if(state.currentConversationId === convId) {
+                        state.currentConversationId = null;
+                        document.getElementById('chatWindow').innerHTML = `
+                            <div class="welcome-container">
+                                <h3>Soga imefutwa!</h3>
+                                <p style="color:var(--text-muted)">Anzisha soga mpya juu kushoto.</p>
+                            </div>`;
+                    }
+                    fetchConversationsFromDatabase();
+                });
         }
-        
-        if (userInput) userInput.focus();
-    })
-    .catch(error => {
-        console.error('Error creating conversation:', error);
-    });
-}
-</script>
+
+        // Kufuta soga zote kabisa za mtumiaji
+        function clearAllConversationsFromUI() {
+            if(!confirm("Je, una uhakika unataka kufuta historia yako yote ya soga? Kitendo hiki hakirudi nyuma!")) return;
+
+            fetch('/api/conversations/clear_all', { method: 'POST' })
+                .then(() => {
+                    state.currentConversationId = null;
+                    document.getElementById('chatWindow').innerHTML = `
+                        <div class="welcome-container">
+                            <h3>Historia Imesafishwa!</h3>
+                            <p style="color:var(--text-muted)">Ukurasa wako upo msafi sasa hivi.</p>
+                        </div>`;
+                    fetchConversationsFromDatabase();
+                    if (window.innerWidth < 768) toggleSidebar();
+                });
+        }
+    </script>
 </body>
 </html>
